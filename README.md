@@ -1,13 +1,18 @@
-# SWENG 861: Capstone Project Starter
+# SWENG 861: Campus Rental (Housing)
 
-This is the official starter repository for the **Course Capstone Project**.
+**Author:** Charles Patterson  
+**Course:** SWENG 861 – Software Construction  
+**Program:** Penn State University - Master of Software Engineering
 
-Unlike the Weekly Assignments, this project is **Open Domain**. You will use this repository to build your flagship application (Web, Mobile, IoT, or AI) from Week 1 through Week 7.
+## Project Overview
+
+Campus Rental is a full-stack housing management application designed to support university dormitory room selection, lease management, and roommate matching. Housing officers will manage room and bed availability, while students will be able to view available housing, select a unit, and complete the leasing process. The application will support a "Secure Room" workflow that reserves bed inventory, generates a lease document, and integrates with DocuSign for electronic signatures.
+
+The application will be developed throughout SWENG 861 as the Course Capstone Project.
 
 ## 📂 Repository Structure
 
-You are required to maintain a clean structure to facilitate grading and architecture reviews:
-
+```text
 /
 ├── .github/
 │   └── workflows/          # [DevOps] CI/CD Pipelines (Build, Test, Deploy)
@@ -20,37 +25,54 @@ You are required to maintain a clean structure to facilitate grading and archite
 │   └── observability/      # [Dashboard] Prometheus.yml, Grafana Dashboards, Screenshots
 ├── tests/                  # End-to-End (E2E) Test Suites
 └── README.md               # The Main Project Documentation
-
-
-# SWENG 861: Capstone Project Starter
-
-This is the official starter repository for the **Course Capstone Project**.
-
-This project requires a **Full-Stack Implementation** including Frontend, Backend, DevOps Automation, and SRE Observability.
-
-## 📂 Repository Structure
+```
 
 | Folder | Purpose |
 | :--- | :--- |
 | **`.github/workflows`** | **DevOps:** Place your CI/CD YAML files here (e.g., `ci.yml`). |
 | **`src/client`** | **Frontend:** Your Web or Mobile application code (React, Vue, Flutter). |
-| **src/server`** | **Backend:** Your API and Database logic (Node, Python, Java). |
+| **`src/server`** | **Backend:** Your API and Database logic (Node, Python, Java). |
 | **`ops/docker`** | **Infrastructure:** Dockerfiles and `docker-compose.yml` to run the stack. |
 | **`ops/observability`** | **SRE/Dashboard:** Prometheus configs, Grafana JSON exports, or screenshots of your monitoring dashboard. |
 | **`docs/`** | **Design:** Your Week 2 Proposal and Architecture diagrams. |
 
+## Tech Stack
+
+The planned technology stack for the project includes:
+
+* **Frontend:** TBD
+* **Backend:** Node.js with Express
+* **Database:** TBD
+* **Services:** Inventory Service, Application Service, Lease Service
+* **External Integration:** DocuSign API
+* **Containerization:** Docker and Docker Compose
+* **Source Control:** Git and GitHub
+
+The technology stack will be refined as the project architecture and requirements are finalized.
+
+
 ## 🚀 How to Start
 
-### 1. Create Your Repo
-1.  Click **"Use this template"** above.
-2.  Name your repository: `sweng861-capstone-<yourPSUid>`
-3.  Set visibility to **Public** (or Private + invite Instructor).
+The application is currently in the initial project setup phase. Local and Docker execution instructions will be updated as the frontend and backend components are implemented.
 
-### 2. Update Your Project Info
-Edit this README to include:
-* **Project Name & Description**
-* **Tech Stack** (e.g., React + Spring Boot + Postgres)
-* **How to Run** (Instructions for Local & Docker execution)
+### Local Development
+
+```bash
+# Installation and startup commands will be added as development begins.
+```
+
+### Docker
+
+The completed application will support containerized local execution using Docker Compose.
+
+```bash
+# Docker Compose startup instructions will be added as containers are implemented.
+```
+
+## AI Use
+
+Generative AI was used to assist with project documentation and project planning.
 
 ---
-*This repository is for academic use. Do not commit secrets/API keys.*
+
+*This repository is for academic use as part of Penn State University's SWENG 861 – Software Construction course.*
