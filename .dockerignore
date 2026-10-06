@@ -1,0 +1,14 @@
+.git
+.gitignore
+
+**/node_modules
+**/dist
+**/coverage
+
+.env
+.env.*
+!.env.example
+
+docs
+tests
+ops/observability

@@ -1,0 +1,95 @@
+services:
+  db:
+    build:
+      context: ../..
+      dockerfile: ops/docker/db/Dockerfile
+
+    container_name: campus-rental-db
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-campus_rental}
+      POSTGRES_USER: ${POSTGRES_USER:-campus_rental}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campus_rental_dev}
+
+    ports:
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
+
+    volumes:
+      - campus-rental-db-data:/var/lib/postgresql
+
+    restart: unless-stopped
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-campus_rental} -d ${POSTGRES_DB:-campus_rental}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  server:
+    build:
+      context: ../..
+      dockerfile: ops/docker/server/Dockerfile
+
+    container_name: campus-rental-server
+
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-3000}
+
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB:-campus_rental}
+      DATABASE_USER: ${POSTGRES_USER:-campus_rental}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-campus_rental_dev}
+
+    ports:
+      - "${SERVER_PORT:-3000}:${SERVER_PORT:-3000}"
+
+    volumes:
+      - ../../src/server/src:/app/src
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://localhost:${SERVER_PORT:-3000}/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+  client:
+    build:
+      context: ../..
+      dockerfile: ops/docker/client/Dockerfile
+
+    container_name: campus-rental-client
+
+    ports:
+      - "${CLIENT_PORT:-4200}:4200"
+
+    volumes:
+      - ../../src/client/src:/app/src
+
+    depends_on:
+      server:
+        condition: service_healthy
+
+    restart: unless-stopped
+
+
+volumes:
+  campus-rental-db-data:
