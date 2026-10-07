@@ -47,4 +47,24 @@ export async function setup(): Promise<void> {
   } finally {
     await maintenancePool.end();
   }
+
+  const testPool = new Pool({
+    host: testDatabase.host,
+    port: testDatabase.port,
+    database: testDatabase.database,
+    user: testDatabase.user,
+    password: testDatabase.password,
+
+    max: 1,
+    connectionTimeoutMillis: 5_000,
+  });
+
+  try {
+    await testPool.query(`
+      DROP SCHEMA IF EXISTS public CASCADE;
+      CREATE SCHEMA public;
+    `);
+  } finally {
+    await testPool.end();
+  }
 }
