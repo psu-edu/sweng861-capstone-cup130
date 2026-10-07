@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "check": "npm run lint && npm run typecheck && npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:status": "tsx src/db/migration-status.ts"
   },
@@ -31,6 +33,7 @@
     "eslint": "^10.11.0",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.70.1"
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.3"
   }
 }
