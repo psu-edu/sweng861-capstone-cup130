@@ -363,6 +363,32 @@ docker compose --env-file .env -f ops/docker/docker-compose.yml down -v
 
 This should only be used when intentionally resetting the local development database.
 
+### Development / Demo Seed Data
+
+Campus Rental includes deterministic development data that can be loaded after all database migrations have been applied.
+
+From `src/server`:
+
+```powershell
+npm run db:seed
+```
+
+The seed creates fictional development records across the Campus Rental domain, including users, student profiles, housing inventory, applications, assignments, leases, roommate profiles, and roommate requests.
+The seed is designed to be repeatable. Running npm run db:seed again does not duplicate the predefined demo records.
+To create a fresh development database from an empty Docker volume:
+
+```powershell
+docker compose --env-file .env -f ops/docker/docker-compose.yml down -v
+docker compose --env-file .env -f ops/docker/docker-compose.yml up -d db
+```
+Then from src/server:
+
+```powershell
+npm run db:migrate
+npm run db:seed
+```
+Removing the Docker volume permanently deletes the current local PostgreSQL data and should only be done when intentionally resetting the development environment.
+
 ## Planned Campus Rental Features
 
 The current implementation roadmap includes:
