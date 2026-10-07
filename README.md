@@ -18,7 +18,7 @@ AI-assisted roommate matching is also part of the planned capstone functionality
 
 ## Project Status
 
-The initial backend and database foundation is complete.
+The backend foundation, PostgreSQL database foundation, and core Campus Rental domain schema are complete.
 
 Currently implemented:
 
@@ -35,34 +35,41 @@ Currently implemented:
 - Migration history tracking using `schema_migrations`
 - Migration checksum validation
 - Transactional migration execution
-- Database migration status command
+- Complete ten-table Campus Rental domain schema
+- Database constraints, foreign keys, indexes, and partial unique indexes
+- Deterministic development/demo seed data
+- Vitest PostgreSQL integration testing
+- Dedicated automated test database
+- Database migration and seed commands
 - Combined lint, typecheck, and build verification command
 
-The Angular frontend and Campus Rental domain tables will be added in later feature branches.
+The Angular frontend and application-level API, service, repository, authentication, housing workflow, roommate matching, and lease functionality will be implemented in later feature branches.
 
 ## Repository Structure
 
 ```text
 /
-├── .github/
-│   └── workflows/              # CI/CD workflows
 ├── docs/                       # Architecture and project documentation
 ├── src/
 │   ├── client/                 # Angular frontend
 │   └── server/                 # Node.js / Express backend
 │       ├── src/
 │       │   ├── config/         # Environment and application configuration
-│       │   ├── db/             # PostgreSQL connection and migrations
-│       │   │   └── migrations/ # Versioned SQL migration files
+│       │   ├── db/
+│       │   │   ├── migrations/ # Versioned SQL migrations
+│       │   │   └── seeds/      # Deterministic development/demo seed data
 │       │   ├── app.ts
 │       │   └── server.ts
+│       ├── tests/
+│       │   ├── integration/    # PostgreSQL integration tests
+│       │   └── setup/          # Automated test database setup
 │       ├── eslint.config.js
 │       ├── package.json
-│       └── tsconfig.json
+│       ├── tsconfig.json
+│       └── vitest.config.ts
 ├── ops/
 │   ├── docker/                 # Dockerfiles and Docker Compose configuration
 │   └── observability/          # Observability configuration and artifacts
-├── tests/                      # End-to-end test suites
 ├── .env.example                # Example local environment configuration
 ├── .dockerignore
 ├── .gitignore
@@ -122,7 +129,10 @@ POSTGRES_DB
 POSTGRES_USER
 POSTGRES_PASSWORD
 POSTGRES_HOST_PORT
+POSTGRES_TEST_DB
 ```
+
+`POSTGRES_TEST_DB` identifies the dedicated PostgreSQL database used by the automated integration tests. If it is omitted, the test configuration defaults to `<POSTGRES_DB>_test`.
 
 The Docker Compose environment maps the PostgreSQL values into the database configuration used by the Express backend.
 
@@ -266,7 +276,16 @@ From `src/server`:
 npm run db:migrate
 ```
 
-At the current development stage there are no Campus Rental domain migrations yet. The `schema_migrations` infrastructure table exists and is ready for the domain schema work planned in the next feature branch.
+The current domain migrations are:
+
+```text
+0001_create_users_and_student_profiles.sql
+0002_create_housing_inventory.sql
+0003_create_housing_workflow.sql
+0004_create_roommate_matching.sql
+```
+
+Together, these migrations create the complete Campus Rental domain schema for users, student profiles, housing inventory, housing applications, assignments, leases, roommate profiles, and roommate requests.
 
 ## Backend Verification
 
@@ -307,6 +326,14 @@ Production Build
 ```
 
 This command should be run before completing a feature branch or preparing a Pull Request.
+
+Run the PostgreSQL integration tests:
+
+```powershell
+npm test
+```
+
+The tests use a dedicated test database and recreate its public schema before each test run. The test suite verifies database connectivity, migrations, domain constraints, indexes, and deterministic seed behavior.
 
 ## Docker
 
@@ -374,14 +401,16 @@ npm run db:seed
 ```
 
 The seed creates fictional development records across the Campus Rental domain, including users, student profiles, housing inventory, applications, assignments, leases, roommate profiles, and roommate requests.
-The seed is designed to be repeatable. Running npm run db:seed again does not duplicate the predefined demo records.
+
+The seed is designed to be repeatable. Running `npm run db:seed` again does not duplicate the predefined demo records.
+
 To create a fresh development database from an empty Docker volume:
 
 ```powershell
 docker compose --env-file .env -f ops/docker/docker-compose.yml down -v
 docker compose --env-file .env -f ops/docker/docker-compose.yml up -d db
 ```
-Then from src/server:
+Then from `src/server`:
 
 ```powershell
 npm run db:migrate
