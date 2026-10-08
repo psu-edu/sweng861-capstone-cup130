@@ -51,12 +51,11 @@ The Angular frontend and application-level API, service, repository, authenticat
 /
 ├── docs/                       # Architecture and project documentation
 ├── src/
-│   ├── client/                 # Angular frontend
 │   └── server/                 # Node.js / Express backend
 │       ├── src/
 │       │   ├── config/         # Environment and application configuration
 │       │   ├── db/
-│       │   │   ├── migrations/ # Versioned SQL migrations
+│       │   │   ├── migrations/ # Versioned SQL migration files
 │       │   │   └── seeds/      # Deterministic development/demo seed data
 │       │   ├── app.ts
 │       │   └── server.ts
@@ -68,8 +67,7 @@ The Angular frontend and application-level API, service, repository, authenticat
 │       ├── tsconfig.json
 │       └── vitest.config.ts
 ├── ops/
-│   ├── docker/                 # Dockerfiles and Docker Compose configuration
-│   └── observability/          # Observability configuration and artifacts
+│   └── docker/                 # Dockerfiles and Docker Compose configuration
 ├── .env.example                # Example local environment configuration
 ├── .dockerignore
 ├── .gitignore
@@ -230,14 +228,6 @@ src/server/src/db/migrations
 
 Migration filenames will use a sequential numeric prefix and descriptive name.
 
-Example:
-
-```text
-0001_create_users.sql
-0002_create_housing_inventory.sql
-0003_create_housing_applications.sql
-```
-
 Migrations are applied in filename order.
 
 Successfully applied migrations are tracked in the infrastructure table:
@@ -325,8 +315,6 @@ TypeScript Type Check
 Production Build
 ```
 
-This command should be run before completing a feature branch or preparing a Pull Request.
-
 Run the PostgreSQL integration tests:
 
 ```powershell
@@ -334,6 +322,8 @@ npm test
 ```
 
 The tests use a dedicated test database and recreate its public schema before each test run. The test suite verifies database connectivity, migrations, domain constraints, indexes, and deterministic seed behavior.
+
+`npm run check` and `npm test` should both be run before completing a feature branch or preparing a Pull Request.
 
 ## Docker
 
@@ -410,18 +400,21 @@ To create a fresh development database from an empty Docker volume:
 docker compose --env-file .env -f ops/docker/docker-compose.yml down -v
 docker compose --env-file .env -f ops/docker/docker-compose.yml up -d db
 ```
+
 Then from `src/server`:
 
 ```powershell
 npm run db:migrate
 npm run db:seed
 ```
+
 Removing the Docker volume permanently deletes the current local PostgreSQL data and should only be done when intentionally resetting the development environment.
 
 ## Planned Campus Rental Features
 
 The current implementation roadmap includes:
 
+0. Backend and Docker foundation
 1. Database foundation
 2. Campus Rental domain schema
 3. Angular frontend foundation
