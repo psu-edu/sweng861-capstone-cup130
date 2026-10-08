@@ -1,0 +1,7 @@
+{
+  "/health": {
+    "target": "http://server:3000",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
