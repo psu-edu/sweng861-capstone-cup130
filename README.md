@@ -325,6 +325,20 @@ The tests use a dedicated test database and recreate its public schema before ea
 
 `npm run check` and `npm test` should both be run before completing a feature branch or preparing a Pull Request.
 
+### Continuous Integration
+
+The repository includes a GitHub Actions backend CI workflow that installs dependencies, runs ESLint, performs TypeScript type checking, executes the PostgreSQL integration test suite, and builds the backend.
+
+GitHub Actions are currently disabled on the university-hosted GitHub instance. The workflow is therefore validated locally using `act`, which runs the GitHub Actions workflow through Docker.
+
+From the repository root:
+
+```powershell
+act pull_request -W .github/workflows/backend-ci.yml -j backend
+```
+
+Local workflow validation requires Docker to be running and port `5432` to be available for the temporary PostgreSQL service container.
+
 ## Docker
 
 The current Docker environment supports the Express backend and PostgreSQL database.
