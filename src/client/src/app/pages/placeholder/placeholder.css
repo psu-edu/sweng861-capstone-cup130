@@ -1,0 +1,36 @@
+.page {
+  margin: 0 auto;
+  max-width: 1200px;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p {
+  color: var(--color-text-muted);
+}
+
+.placeholder-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-card);
+  max-width: 700px;
+  padding: 1.5rem;
+}
+
+.placeholder-card h2 {
+  font-size: 1.1rem;
+}
+
+.placeholder-card p {
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin-bottom: 0;
+}

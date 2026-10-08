@@ -1,1 +1,73 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --color-navy: #102a43;
+  --color-blue: #2563eb;
+  --color-blue-dark: #1d4ed8;
+  --color-blue-light: #eff6ff;
+
+  --color-background: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-white: #ffffff;
+
+  --color-text: #1f2937;
+  --color-text-muted: #667085;
+  --color-header-muted: #cbd5e1;
+
+  --color-border: #d8dee6;
+
+  --color-success: #18794e;
+  --color-success-background: #ecfdf3;
+
+  --color-warning: #9a6700;
+  --color-warning-background: #fff8c5;
+
+  --color-danger: #b42318;
+  --color-danger-background: #fef3f2;
+
+  --radius-small: 6px;
+  --radius-medium: 10px;
+
+  --shadow-card:
+    0 1px 2px rgb(16 24 40 / 6%),
+    0 1px 3px rgb(16 24 40 / 10%);
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}

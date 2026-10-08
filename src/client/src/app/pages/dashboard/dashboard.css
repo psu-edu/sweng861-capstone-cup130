@@ -1,0 +1,87 @@
+.page {
+  margin: 0 auto;
+  max-width: 1200px;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.eyebrow {
+  color: var(--color-blue-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p {
+  color: var(--color-text-muted);
+  max-width: 700px;
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
+}
+
+.card h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+.card p {
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.status-badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  text-transform: capitalize;
+}
+
+.status-badge-neutral {
+  background: var(--color-background);
+  color: var(--color-text-muted);
+}
+
+.status-badge-pending {
+  background: var(--color-warning-background);
+  color: var(--color-warning);
+}
+
+.status-badge-success {
+  background: var(--color-success-background);
+  color: var(--color-success);
+}
+
+.status-badge-danger {
+  background: var(--color-danger-background);
+  color: var(--color-danger);
+}
+
+@media (max-width: 800px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}

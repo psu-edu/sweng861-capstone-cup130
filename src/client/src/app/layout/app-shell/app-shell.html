@@ -1,0 +1,67 @@
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">CR</div>
+
+    <div>
+      <div class="brand-name">Campus Rental</div>
+      <div class="brand-subtitle">University Housing</div>
+    </div>
+  </div>
+
+  <div class="portal-view">
+    <span class="portal-view-label">Current View</span>
+    <strong>Student Portal</strong>
+  </div>
+</header>
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <nav class="primary-nav" aria-label="Primary navigation">
+      <a
+        routerLink="/dashboard"
+        routerLinkActive="active"
+      >
+        Dashboard
+      </a>
+
+      <a
+        routerLink="/housing-preferences"
+        routerLinkActive="active"
+      >
+        Housing Preferences
+      </a>
+
+      <a
+        routerLink="/application"
+        routerLinkActive="active"
+      >
+        My Application
+      </a>
+
+      <a
+        routerLink="/housing"
+        routerLinkActive="active"
+      >
+        My Housing
+      </a>
+
+      <a
+        routerLink="/roommates"
+        routerLinkActive="active"
+      >
+        Roommates
+      </a>
+
+      <a
+        routerLink="/lease"
+        routerLinkActive="active"
+      >
+        My Lease
+      </a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
