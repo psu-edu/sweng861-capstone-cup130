@@ -35,6 +35,13 @@ jobs:
           --health-retries 5
 
     env:
+      DATABASE_HOST: localhost
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: campus_rental
+      DATABASE_USER: campus_rental
+      DATABASE_PASSWORD: campus_rental_ci
+      TEST_DATABASE_NAME: campus_rental_test
+
       POSTGRES_DB: campus_rental
       POSTGRES_USER: campus_rental
       POSTGRES_PASSWORD: campus_rental_ci
