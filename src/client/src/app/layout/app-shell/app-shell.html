@@ -8,56 +8,124 @@
     </div>
   </div>
 
-  <div class="portal-view">
-    <span class="portal-view-label">Current View</span>
-    <strong>Student Portal</strong>
+  <div class="portal-actions">
+    <div class="portal-view">
+      <span class="portal-view-label">
+        Current View
+      </span>
+  
+      @if (currentUserService.user(); as user) {
+        <strong>
+          {{
+            user.role === 'STUDENT'
+              ? 'Student Portal'
+              : 'Housing Officer Portal'
+          }}
+        </strong>
+  
+        <span class="portal-user">
+          {{ user.email }}
+        </span>
+      } @else {
+        <strong>Campus Rental</strong>
+      }
+    </div>
+  
+    <button
+      type="button"
+      class="logout-button"
+      (click)="logout()"
+    >
+      Sign Out
+    </button>
   </div>
 </header>
 
 <div class="app-layout">
   <aside class="sidebar">
-    <nav class="primary-nav" aria-label="Primary navigation">
+    <nav
+      class="primary-nav"
+      aria-label="Primary navigation"
+    >
       <a
         routerLink="/dashboard"
         routerLinkActive="active"
       >
         Dashboard
       </a>
+  
+      @if (
+        currentUserService.user()?.role
+          === 'STUDENT'
+      ) {
+        <a
+          routerLink="/housing-preferences"
+          routerLinkActive="active"
+        >
+          Housing Preferences
+        </a>
+  
+        <a
+          routerLink="/application"
+          routerLinkActive="active"
+        >
+          My Application
+        </a>
+  
+        <a
+          routerLink="/housing"
+          routerLinkActive="active"
+        >
+          My Housing
+        </a>
+  
+        <a
+          routerLink="/roommates"
+          routerLinkActive="active"
+        >
+          Roommates
+        </a>
+  
+        <a
+          routerLink="/lease"
+          routerLinkActive="active"
+        >
+          My Lease
+        </a>
 
-      <a
-        routerLink="/housing-preferences"
-        routerLinkActive="active"
-      >
-        Housing Preferences
-      </a>
-
-      <a
-        routerLink="/application"
-        routerLinkActive="active"
-      >
-        My Application
-      </a>
-
-      <a
-        routerLink="/housing"
-        routerLinkActive="active"
-      >
-        My Housing
-      </a>
-
-      <a
-        routerLink="/roommates"
-        routerLinkActive="active"
-      >
-        Roommates
-      </a>
-
-      <a
-        routerLink="/lease"
-        routerLinkActive="active"
-      >
-        My Lease
-      </a>
+        <a
+          routerLink="/profile"
+          routerLinkActive="active"
+        >
+          My Profile
+        </a>
+      }
+  
+      @if (
+        currentUserService.user()?.role
+          === 'HOUSING_OFFICER'
+      ) {
+        <a
+          routerLink="/inventory"
+          routerLinkActive="active"
+        >
+          Housing Inventory
+        </a>
+  
+        <a
+          routerLink="/applications"
+          routerLinkActive="active"
+        >
+          Applications
+        </a>
+  
+        <a
+          routerLink="/assignments"
+          routerLinkActive="active"
+        >
+          Assignments
+        </a>
+      }
     </nav>
   </aside>
 

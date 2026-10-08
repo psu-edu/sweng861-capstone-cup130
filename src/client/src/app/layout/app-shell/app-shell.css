@@ -54,6 +54,18 @@
   font-size: 0.75rem;
 }
 
+.portal-user {
+  color: var(--color-header-muted);
+  font-size: 0.75rem;
+  margin-top: 0.125rem;
+}
+
+.portal-actions {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+}
+
 .app-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
@@ -99,6 +111,21 @@
   background: var(--color-background);
   min-width: 0;
   padding: 2rem;
+}
+
+.logout-button {
+  background: transparent;
+  border: 1px solid var(--color-header-muted);
+  border-radius: var(--radius-small);
+  color: var(--color-white);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.logout-button:hover {
+  background: rgb(255 255 255 / 10%);
 }
 
 @media (max-width: 800px) {

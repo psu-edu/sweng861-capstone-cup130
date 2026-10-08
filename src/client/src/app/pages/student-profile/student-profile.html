@@ -1,0 +1,240 @@
+<section class="page">
+  <header class="page-header">
+    <p class="eyebrow">
+      Student Profile
+    </p>
+
+    <h1>My Profile</h1>
+
+    <p>
+      Keep your student and academic information
+      up to date.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading profile...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="card">
+      <div class="form-message error-message">
+        {{ loadError() }}
+      </div>
+    </div>
+  } @else {
+    <form
+      class="profile-form card"
+      [formGroup]="form"
+      (ngSubmit)="save()"
+    >
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="studentNumber">
+            Student Number
+          </label>
+
+          <input
+            id="studentNumber"
+            type="text"
+            formControlName="studentNumber"
+          />
+
+          @if (
+            form.controls.studentNumber.touched
+            && form.controls.studentNumber.invalid
+          ) {
+            <span class="field-error">
+              Student number is required and must
+              be 30 characters or fewer.
+            </span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="firstName">
+            First Name
+          </label>
+
+          <input
+            id="firstName"
+            type="text"
+            formControlName="firstName"
+          />
+
+          @if (
+            form.controls.firstName.touched
+            && form.controls.firstName.invalid
+          ) {
+            <span class="field-error">
+              First name is required.
+            </span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="lastName">
+            Last Name
+          </label>
+
+          <input
+            id="lastName"
+            type="text"
+            formControlName="lastName"
+          />
+
+          @if (
+            form.controls.lastName.touched
+            && form.controls.lastName.invalid
+          ) {
+            <span class="field-error">
+              Last name is required.
+            </span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="gender">
+            Gender
+          </label>
+
+          <select
+            id="gender"
+            formControlName="gender"
+          >
+            <option value="UNSPECIFIED">
+              Unspecified
+            </option>
+
+            <option value="MALE">
+              Male
+            </option>
+
+            <option value="FEMALE">
+              Female
+            </option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="academicStatus">
+            Academic Status
+          </label>
+
+          <select
+            id="academicStatus"
+            formControlName="academicStatus"
+          >
+            <option value="FRESHMAN">
+              Freshman
+            </option>
+
+            <option value="SOPHOMORE">
+              Sophomore
+            </option>
+
+            <option value="JUNIOR">
+              Junior
+            </option>
+
+            <option value="SENIOR">
+              Senior
+            </option>
+
+            <option value="GRADUATE">
+              Graduate
+            </option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="major">
+            Major
+          </label>
+
+          <input
+            id="major"
+            type="text"
+            formControlName="major"
+          />
+
+          @if (
+            form.controls.major.touched
+            && form.controls.major.invalid
+          ) {
+            <span class="field-error">
+              Major is required.
+            </span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="graduationSemester">
+            Anticipated Graduation Semester
+          </label>
+
+          <select
+            id="graduationSemester"
+            formControlName=
+              "anticipatedGraduationSemester"
+          >
+            <option [ngValue]="null">
+              Not specified
+            </option>
+
+            <option value="SPRING">
+              Spring
+            </option>
+
+            <option value="SUMMER">
+              Summer
+            </option>
+
+            <option value="FALL">
+              Fall
+            </option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="graduationYear">
+            Anticipated Graduation Year
+          </label>
+
+          <input
+            id="graduationYear"
+            type="number"
+            formControlName=
+              "anticipatedGraduationYear"
+          />
+        </div>
+      </div>
+
+      @if (message()) {
+        <div class="form-message success-message">
+          {{ message() }}
+        </div>
+      }
+
+      @if (error()) {
+        <div class="form-message error-message">
+          {{ error() }}
+        </div>
+      }
+
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="primary-button"
+          [disabled]="saving()"
+        >
+          {{
+            saving()
+              ? 'Saving...'
+              : 'Save Profile'
+          }}
+        </button>
+      </div>
+    </form>
+  }
+</section>
