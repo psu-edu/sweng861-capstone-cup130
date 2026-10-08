@@ -1,40 +1,98 @@
 <section class="page">
-  <header class="page-header">
-    <p class="eyebrow">Student Dashboard</p>
-    <h1>Welcome to Campus Rental</h1>
-    <p>
-      Track your university housing process and see what
-      needs your attention next.
-    </p>
-  </header>
-
-  <div class="dashboard-grid">
-    <article class="card">
-      <h2>Housing Process</h2>
-
-      <p>
-        Housing application information will appear here
-        after the application workflow is implemented.
+  @if (
+    currentUserService.user()?.role
+      === 'HOUSING_OFFICER'
+  ) {
+    <header class="page-header">
+      <p class="eyebrow">
+        Housing Officer Dashboard
       </p>
 
-      <span class="status-badge status-badge-neutral">
-        Foundation Placeholder
-      </span>
-    </article>
+      <h1>Campus Rental Administration</h1>
 
-    <article class="card">
-      <h2>System Connection</h2>
+      <p>
+        Review housing operations and access
+        administrative tools.
+      </p>
+    </header>
 
-      <p>{{ backendMessage() }}</p>
+    <div class="dashboard-grid">
+      <article class="card">
+        <h2>Housing Operations</h2>
 
-      <span
-        class="status-badge"
-        [class.status-badge-pending]="backendState() === 'checking'"
-        [class.status-badge-success]="backendState() === 'connected'"
-        [class.status-badge-danger]="backendState() === 'unavailable'"
-      >
-        {{ backendState() }}
-      </span>
-    </article>
-  </div>
+        <p>
+          Inventory, application review, and
+          assignment information will appear here
+          as those workflows are implemented.
+        </p>
+
+        <span
+          class="status-badge status-badge-neutral"
+        >
+          Administration
+        </span>
+      </article>
+
+      <article class="card">
+        <h2>System Connection</h2>
+
+        <p>{{ backendMessage() }}</p>
+
+        <span
+          class="status-badge"
+          [class.status-badge-pending]="backendState() === 'checking'"
+          [class.status-badge-success]="backendState() === 'connected'"
+          [class.status-badge-danger]="backendState() === 'unavailable'"
+        >
+          {{ backendState() }}
+        </span>
+      </article>
+    </div>
+  } @else {
+    <header class="page-header">
+      <p class="eyebrow">
+        Student Dashboard
+      </p>
+
+      <h1>Welcome to Campus Rental</h1>
+
+      <p>
+        Track your university housing process and
+        see what needs your attention next.
+      </p>
+    </header>
+
+    <div class="dashboard-grid">
+      <article class="card">
+        <h2>Housing Process</h2>
+
+        <p>
+          Housing application information will
+          appear here after the application
+          workflow is implemented.
+        </p>
+
+        <span
+          class="status-badge status-badge-neutral"
+        >
+          Foundation Placeholder
+        </span>
+      </article>
+
+      <article class="card">
+        <h2>System Connection</h2>
+
+        <p>{{ backendMessage() }}</p>
+
+        <span
+          class="status-badge"
+          [class.status-badge-pending]="backendState() === 'checking'"
+          [class.status-badge-success]="backendState() === 'connected'"
+          [class.status-badge-danger]="backendState() === 'unavailable'"
+        >
+          {{ backendState() }}
+        </span>
+      </article>
+    </div>
+  }
 </section>

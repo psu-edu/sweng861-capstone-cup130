@@ -78,4 +78,14 @@ export const environment = Object.freeze({
       'POSTGRES_PASSWORD',
     ),
   }),
+
+  auth0: Object.freeze({
+    domain: getRequiredEnvironmentValue(
+      'AUTH0_DOMAIN',
+    ),
+
+    audience: getRequiredEnvironmentValue(
+      'AUTH0_AUDIENCE',
+    ),
+  }),
 });

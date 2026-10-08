@@ -6,6 +6,10 @@ import {
 } from '@angular/core';
 
 import {
+  CurrentUserService,
+} from '../../core/services/current-user.service';
+
+import {
   HealthApi,
 } from '../../core/services/health-api';
 
@@ -21,7 +25,11 @@ type BackendState =
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit {
-  private readonly healthApi = inject(HealthApi);
+  private readonly healthApi =
+    inject(HealthApi);
+
+  protected readonly currentUserService =
+    inject(CurrentUserService);
 
   protected readonly backendState =
     signal<BackendState>('checking');
@@ -34,7 +42,9 @@ export class Dashboard implements OnInit {
       .getHealth()
       .subscribe({
         next: (health) => {
-          this.backendState.set('connected');
+          this.backendState.set(
+            'connected',
+          );
 
           this.backendMessage.set(
             `${health.service} is connected to PostgreSQL.`,
@@ -42,7 +52,9 @@ export class Dashboard implements OnInit {
         },
 
         error: () => {
-          this.backendState.set('unavailable');
+          this.backendState.set(
+            'unavailable',
+          );
 
           this.backendMessage.set(
             'The Campus Rental backend is currently unavailable.',

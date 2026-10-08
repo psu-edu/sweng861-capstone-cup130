@@ -3,9 +3,10 @@ import express, {
   type Response,
 } from 'express';
 
-import {
-  checkDatabaseConnection,
-} from './db/pool.js';
+import {checkDatabaseConnection,} from './db/pool.js';
+import {authRouter,} from './auth/auth.routes.js';
+import {handleAuthenticationError,} from './auth/auth.middleware.js';
+import {studentProfileRouter,} from './modules/student-profile/student-profile.routes.js';
 
 const app = express();
 
@@ -33,6 +34,20 @@ app.get(
       });
     }
   },
+);
+
+app.use(
+  '/api/auth',
+  authRouter,
+);
+
+app.use(
+  '/api/student/profile',
+  studentProfileRouter,
+);
+
+app.use(
+  handleAuthenticationError,
 );
 
 export default app;

@@ -18,7 +18,7 @@ AI-assisted roommate matching is also part of the planned capstone functionality
 
 ## Project Status
 
-The backend foundation, PostgreSQL database foundation, core Campus Rental domain schema, and Angular frontend foundation are complete.
+The project currently includes the backend, database, Angular frontend, authentication and authorization foundation, and Student Profile workflow.
 
 Currently implemented:
 
@@ -38,21 +38,29 @@ Currently implemented:
 - Complete ten-table Campus Rental domain schema
 - Database constraints, foreign keys, indexes, and partial unique indexes
 - Deterministic development/demo seed data
-- Vitest PostgreSQL integration testing
-- Dedicated automated test database
-- Database migration and seed commands
-- Combined lint, typecheck, and build verification command
+- Dedicated PostgreSQL integration test database
 - Angular 22 frontend using TypeScript
-- Angular routing with shared application shell
+- Angular routing with a shared application shell
 - Campus Rental design tokens and responsive layout
-- Initial Student navigation and placeholder routes
-- Frontend API service with backend health integration
 - Local and Docker-specific Angular API proxy configuration
 - Angular ESLint, Vitest, and production build tooling
 - Full Angular, Express, and PostgreSQL Docker Compose development environment
-- Angular hot reload through Docker
+- Auth0 Universal Login integration
+- Auth0 JWT validation in the Express API
+- External Auth0 identity resolution to local Campus Rental users
+- Local `STUDENT` and `HOUSING_OFFICER` roles
+- Backend role-based authorization middleware
+- Authenticated current-user API
+- Authenticated Angular application shell
+- Role-specific Student and Housing Officer navigation
+- Role-specific Student and Housing Officer dashboards
+- Student Profile repository, service, controller, and API routes
+- Student Profile Angular screen with retrieval, editing, validation, and error handling
+- API authorization-boundary tests for Student Profile access and ownership
+- Backend integration testing with Vitest and PostgreSQL
+- Supertest API integration testing
 
-Authentication, role-based authorization, domain API controllers/services/repositories, housing workflows, roommate matching, housing assignment, and lease functionality will be implemented in later feature branches.
+Housing inventory management, housing applications and preferences, roommate matching, housing assignment, lease processing, and the remaining end-to-end workflow are planned for later feature branches.
 
 ## Repository Structure
 
@@ -63,8 +71,8 @@ Authentication, role-based authorization, domain API controllers/services/reposi
 │   ├── client/                 # Angular frontend
 │   │   ├── src/
 │   │   │   ├── app/
-│   │   │   │   ├── core/      # Shared frontend services
-│   │   │   │   ├── layout/    # Shared application shell
+│   │   │   │   ├── core/      # Shared config and frontend services
+│   │   │   │   ├── layout/    # Shared authenticated application shell
 │   │   │   │   └── pages/     # Routed application pages
 │   │   │   └── styles.css     # Global styles and design tokens
 │   │   ├── angular.json
@@ -74,10 +82,13 @@ Authentication, role-based authorization, domain API controllers/services/reposi
 │   │   └── proxy.conf.docker.json      # Docker Compose API proxy
 │   └── server/                 # Node.js / Express backend
 │       ├── src/
+│       │   ├── auth/           # Authentication and RBAC
 │       │   ├── config/
 │       │   ├── db/
 │       │   │   ├── migrations/
 │       │   │   └── seeds/
+│       │   ├── modules/
+│       │   │   └── student-profile/
 │       │   ├── app.ts
 │       │   └── server.ts
 │       ├── tests/
@@ -97,21 +108,23 @@ Authentication, role-based authorization, domain API controllers/services/reposi
 
 ## Tech Stack
 
-The planned technology stack for Campus Rental includes:
+Campus Rental currently uses:
 
 - **Frontend:** Angular with TypeScript
 - **Backend:** Node.js with Express and TypeScript
 - **Database:** PostgreSQL
 - **Database Access:** `pg` PostgreSQL driver
 - **Schema Management:** Explicit versioned SQL migrations
-- **Authentication:** External identity provider with Campus Rental role-based authorization
+- **Authentication:** Auth0 Universal Login
+- **Authorization:** Local Campus Rental role-based authorization
+- **Testing:** Vitest, PostgreSQL integration tests, and Supertest
 - **AI Integration:** AI-assisted roommate compatibility behind a provider abstraction
 - **Electronic Signature:** DocuSign behind an electronic-signature provider abstraction
 - **Containerization:** Docker and Docker Compose
 - **Source Control:** Git and GitHub
 - **CI/CD:** GitHub Actions
 
-The backend follows a modular monolith architecture. Domain modules will use the following general layering:
+The backend follows a modular monolith architecture. Domain modules use the following general layering:
 
 ```text
 Controller
@@ -123,7 +136,9 @@ Repository
 PostgreSQL
 ```
 
-Controllers will handle HTTP concerns, services will contain business rules and workflow logic, and repositories will contain PostgreSQL access.
+Controllers handle HTTP concerns, services contain business rules and workflow logic, and repositories contain PostgreSQL access.
+
+Authentication identity is kept separate from Campus Rental domain information. Auth0 authenticates the user, while the local PostgreSQL `users` table determines whether that identity belongs to Campus Rental and whether the user has the `STUDENT` or `HOUSING_OFFICER` role.
 
 ## Environment Setup
 
@@ -135,9 +150,9 @@ From the repository root, create the local file from the provided example:
 Copy-Item .env.example .env
 ```
 
-Update the values in `.env` as needed for your local environment.
+Update the values in `.env` for your local environment.
 
-The `.env` file contains local credentials and must not be committed to source control.
+The `.env` file contains local credentials and configuration and must not be committed to source control.
 
 The current environment variables are:
 
@@ -149,11 +164,149 @@ POSTGRES_USER
 POSTGRES_PASSWORD
 POSTGRES_HOST_PORT
 POSTGRES_TEST_DB
+AUTH0_DOMAIN
+AUTH0_AUDIENCE
 ```
 
-`POSTGRES_TEST_DB` identifies the dedicated PostgreSQL database used by the automated integration tests. If it is omitted, the test configuration defaults to `<POSTGRES_DB>_test`.
+`AUTH0_DOMAIN` should contain the Auth0 tenant domain without `https://`.
 
-The Docker Compose environment maps the PostgreSQL values into the database configuration used by the Express backend.
+Example:
+
+```text
+AUTH0_DOMAIN=your-tenant.us.auth0.com
+```
+
+The Campus Rental API audience is:
+
+```text
+https://api.campus-rental.local
+```
+
+The automated integration tests use a dedicated PostgreSQL test database. If `POSTGRES_TEST_DB` is omitted, the test configuration defaults to `<POSTGRES_DB>_test`.
+
+## Auth0 Configuration
+
+Campus Rental uses Auth0 Universal Login for authentication.
+
+Auth0 is responsible for authenticating users and issuing access tokens. Campus Rental does not use Auth0 roles as the application authorization source. After a token is validated, the backend resolves the Auth0 subject to a local record in the PostgreSQL `users` table.
+
+### Auth0 API
+
+Create an Auth0 API with:
+
+```text
+Name: Campus Rental API
+Identifier: https://api.campus-rental.local
+Signing Algorithm: RS256
+```
+
+The API identifier must match `AUTH0_AUDIENCE`.
+
+### Auth0 Single Page Application
+
+Create an Auth0 Single Page Application for the Angular frontend.
+
+The current development URLs are:
+
+```text
+Allowed Callback URLs:
+http://localhost:4200
+
+Allowed Logout URLs:
+http://localhost:4200
+http://localhost:4200/login
+
+Allowed Web Origins:
+http://localhost:4200
+```
+
+The Angular Auth0 configuration is located in:
+
+```text
+src/client/src/app/core/config/auth.config.ts
+```
+
+The frontend configuration contains the Auth0 domain, SPA client ID, and API audience.
+
+Auth0 SPA client IDs and tenant domains are public application identifiers. A client secret must not be stored in the Angular application or committed to the repository.
+
+If a different Auth0 tenant or SPA application is used, update `auth.config.ts` to match that application.
+
+### Authentication and Authorization Flow
+
+The current authentication flow is:
+
+```text
+Angular
+   ↓
+Auth0 Universal Login
+   ↓
+Auth0 Access Token
+   ↓
+Express JWT Validation
+   ↓
+Auth0 subject (`sub`)
+   ↓
+Campus Rental `users.auth_subject`
+   ↓
+Local Campus Rental role
+   ↓
+STUDENT or HOUSING_OFFICER authorization
+```
+
+A missing or invalid access token returns HTTP `401 Unauthorized`.
+
+A valid Auth0 identity that is not registered in the local Campus Rental `users` table returns HTTP `403 Forbidden`.
+
+## Development Auth0 Users
+
+The development seed uses deterministic placeholder authentication subjects such as:
+
+```text
+demo|alex-morgan
+demo|housing-officer
+```
+
+These placeholders allow the database seed to remain independent of a specific Auth0 tenant.
+
+To authenticate seeded users through Auth0, create corresponding users in the Auth0 database connection and then map their Auth0 User IDs to the seeded Campus Rental records.
+
+For the current development flow, useful demo identities are:
+
+```text
+alex.morgan@campusrental.test
+housing.officer@campusrental.test
+```
+
+Keep demo passwords outside the repository.
+
+After running the development seed, update the local authentication subjects using the Auth0 User IDs created for those accounts.
+
+Example SQL:
+
+```sql
+UPDATE users
+SET
+  auth_subject = '<ALEX_AUTH0_USER_ID>',
+  updated_at = NOW()
+WHERE email = 'alex.morgan@campusrental.test';
+
+UPDATE users
+SET
+  auth_subject = '<HOUSING_OFFICER_AUTH0_USER_ID>',
+  updated_at = NOW()
+WHERE email = 'housing.officer@campusrental.test';
+```
+
+An Auth0 database user ID normally begins with:
+
+```text
+auth0|
+```
+
+The Auth0 user ID is an identity identifier, not a password or access token.
+
+The local PostgreSQL role remains the authorization source. Auth0 roles or permissions do not need to be configured for the current Campus Rental implementation.
 
 ## Backend Local Development
 
@@ -193,6 +346,16 @@ From `src/server`:
 npm run db:migrate
 ```
 
+### Load Development Data
+
+From `src/server`:
+
+```powershell
+npm run db:seed
+```
+
+If Auth0 development users are being used, map their Auth0 User IDs to the seeded local users after the seed has been loaded.
+
 ### Start the Backend
 
 From `src/server`:
@@ -218,44 +381,118 @@ src/client
 ```
 
 Install dependencies:
+
 ```powershell
 npm install
 ```
 
 Start the Angular development server:
+
 ```powershell
 npm start
 ```
 
 The frontend is available at:
+
 ```text
 http://localhost:4200
 ```
 
-During local development, Angular proxies backend health requests to the Express API running at `http://localhost:3000`.
+During local development, Angular proxies `/health` and `/api` requests to the Express API running at:
 
-The backend and PostgreSQL should therefore be running when verifying frontend API connectivity.
+```text
+http://localhost:3000
+```
+
+The backend and PostgreSQL should therefore be running when testing authenticated frontend functionality.
 
 ### Frontend Verification
 
 Run ESLint:
+
 ```powershell
 npm run lint
 ```
 
-Run the frontend unit tests:
+Run the frontend unit tests once:
+
 ```powershell
-npm test -- --watch=false
+npm test
+```
+
+Run the tests in watch mode during development:
+
+```powershell
+npm run test:watch
 ```
 
 Run the production Angular build:
+
 ```powershell
 npm run build
 ```
 
+## Authentication and Student Profile API
+
+### Current User
+
+```text
+GET /api/auth/me
+```
+
+This endpoint requires a valid Auth0 access token and a matching local Campus Rental user.
+
+Example successful response:
+
+```json
+{
+  "authenticated": true,
+  "user": {
+    "id": "2",
+    "email": "alex.morgan@campusrental.test",
+    "role": "STUDENT"
+  }
+}
+```
+
+The Auth0 subject is used internally for identity resolution and is not returned to the Angular client.
+
+### Student Profile
+
+The Student Profile API is restricted to the `STUDENT` role.
+
+Retrieve the authenticated student's profile:
+
+```text
+GET /api/student/profile
+```
+
+Update the authenticated student's profile:
+
+```text
+PUT /api/student/profile
+```
+
+The profile currently supports:
+
+```text
+Student number
+First name
+Last name
+Gender
+Academic status
+Major
+Anticipated graduation semester
+Anticipated graduation year
+```
+
+The backend determines profile ownership from the authenticated Campus Rental user. A client-supplied `userId` is not used to choose which student profile is updated.
+
+A Housing Officer attempting to access the Student Profile API receives HTTP `403 Forbidden`.
+
 ## Health Check
 
-The current health endpoint is:
+The health endpoint is:
 
 ```text
 GET /health
@@ -281,6 +518,8 @@ The health endpoint performs a PostgreSQL query rather than only checking whethe
 
 If the database cannot be reached, the endpoint returns a degraded response with HTTP status `503`.
 
+Authentication is not required for the health endpoint.
+
 ## Database Migrations
 
 Campus Rental uses explicit PostgreSQL SQL migrations rather than an ORM.
@@ -291,11 +530,11 @@ Migration files are stored in:
 src/server/src/db/migrations
 ```
 
-Migration filenames will use a sequential numeric prefix and descriptive name.
+Migration filenames use a sequential numeric prefix and descriptive name.
 
 Migrations are applied in filename order.
 
-Successfully applied migrations are tracked in the infrastructure table:
+Successfully applied migrations are tracked in:
 
 ```text
 schema_migrations
@@ -309,9 +548,9 @@ checksum
 applied_at
 ```
 
-Each migration runs inside a PostgreSQL transaction. If the migration fails, the transaction is rolled back and the migration is not recorded as applied.
+Each migration runs inside a PostgreSQL transaction. If a migration fails, the transaction is rolled back and the migration is not recorded as applied.
 
-A SHA-256 checksum is also stored for every applied migration. If an already-applied migration file is modified later, the migration tooling will detect the change.
+A SHA-256 checksum is stored for every applied migration. If an already-applied migration file is modified later, the migration tooling detects the change.
 
 Applied migration files should therefore remain immutable. Database changes should be made through a new migration instead of editing an existing applied migration.
 
@@ -340,11 +579,11 @@ The current domain migrations are:
 0004_create_roommate_matching.sql
 ```
 
-Together, these migrations create the complete Campus Rental domain schema for users, student profiles, housing inventory, housing applications, assignments, leases, roommate profiles, and roommate requests.
+Together, these migrations create the current Campus Rental domain schema for users, student profiles, housing inventory, housing applications, assignments, leases, roommate profiles, and roommate requests.
 
 ## Backend Verification
 
-The backend includes separate commands for linting, TypeScript verification, and building.
+The backend includes separate commands for linting, TypeScript verification, testing, and building.
 
 Run ESLint:
 
@@ -352,10 +591,22 @@ Run ESLint:
 npm run lint
 ```
 
-Run TypeScript type checking without generating build output:
+Run production TypeScript type checking:
 
 ```powershell
 npm run typecheck
+```
+
+Run the test TypeScript configuration:
+
+```powershell
+npx tsc -p tests/tsconfig.json --noEmit
+```
+
+Run the PostgreSQL and API integration test suite:
+
+```powershell
+npm test
 ```
 
 Run the production TypeScript build:
@@ -364,33 +615,31 @@ Run the production TypeScript build:
 npm run build
 ```
 
-Run all three checks together:
+Run lint, production type checking, and build together:
 
 ```powershell
 npm run check
 ```
 
-The `check` command runs:
+The automated backend tests currently cover areas including:
 
-```text
-ESLint
-   ↓
-TypeScript Type Check
-   ↓
-Production Build
-```
+- Database connectivity
+- Migrations and schema constraints
+- Housing inventory constraints
+- Housing workflow constraints
+- Roommate matching constraints
+- Deterministic development seed behavior
+- Authenticated local-user resolution
+- Student Profile retrieval and updates
+- Student Profile validation
+- Student Profile API role authorization
+- Student ownership boundaries
 
-Run the PostgreSQL integration tests:
+The authorization tests exercise the real Express Student Profile route, role middleware, controller, service, repository, and PostgreSQL database while replacing the external Auth0 authentication step with deterministic test identity data.
 
-```powershell
-npm test
-```
+Real Auth0 authentication is also verified manually during development using the Angular application and API.
 
-The tests use a dedicated test database and recreate its public schema before each test run. The test suite verifies database connectivity, migrations, domain constraints, indexes, and deterministic seed behavior.
-
-`npm run check` and `npm test` should both be run before completing a feature branch or preparing a Pull Request.
-
-### Continuous Integration
+## Continuous Integration
 
 The repository includes a GitHub Actions backend CI workflow that installs dependencies, runs ESLint, performs TypeScript type checking, executes the PostgreSQL integration test suite, and builds the backend.
 
@@ -403,6 +652,8 @@ act pull_request -W .github/workflows/backend-ci.yml -j backend
 ```
 
 Local workflow validation requires Docker to be running and port `5432` to be available for the temporary PostgreSQL service container.
+
+Additional frontend CI validation is planned for the later CI and observability feature branch.
 
 ## Docker
 
@@ -436,24 +687,51 @@ http://localhost:4200
 
 The Angular client uses a Docker-specific proxy configuration to reach the Express service through the Compose network.
 
-Changes under `src/client/src` are bind-mounted into the client container so Angular development hot reload works without rebuilding the image.
+The client proxies:
 
-Test the containerized API:
-
-```powershell
-Invoke-RestMethod http://localhost:3000/health
+```text
+/health
+/api
 ```
 
-Check database migration status from inside the server container:
+to the backend service.
+
+### Full Docker Refresh
+
+When validating application or dependency changes against a freshly rebuilt development stack, use:
+
+```powershell
+docker compose --env-file .env -f ops/docker/docker-compose.yml down
+```
+
+```powershell
+docker compose --env-file .env -f ops/docker/docker-compose.yml build
+```
+
+```powershell
+docker compose --env-file .env -f ops/docker/docker-compose.yml up -d
+```
+
+Do not add `-v` unless the PostgreSQL data volume is intentionally being deleted.
+
+### Database Commands Inside Docker
+
+Check migration status:
 
 ```powershell
 docker compose --env-file .env -f ops/docker/docker-compose.yml exec server npm run db:status
 ```
 
-Apply migrations from inside the server container:
+Apply pending migrations:
 
 ```powershell
 docker compose --env-file .env -f ops/docker/docker-compose.yml exec server npm run db:migrate
+```
+
+Test the containerized health endpoint:
+
+```powershell
+Invoke-RestMethod http://localhost:3000/health
 ```
 
 Stop the environment:
@@ -462,15 +740,17 @@ Stop the environment:
 docker compose --env-file .env -f ops/docker/docker-compose.yml down
 ```
 
-Removing the PostgreSQL volume is normally unnecessary and will delete the local database data. During early development, a complete reset can be performed with:
+Removing the PostgreSQL volume permanently deletes the local database data.
+
+A full reset should only be performed intentionally:
 
 ```powershell
 docker compose --env-file .env -f ops/docker/docker-compose.yml down -v
 ```
 
-This should only be used when intentionally resetting the local development database.
+After a volume reset, migrations, seed data, and any Auth0-to-local-user mappings must be recreated.
 
-### Development / Demo Seed Data
+## Development / Demo Seed Data
 
 Campus Rental includes deterministic development data that can be loaded after all database migrations have been applied.
 
@@ -480,7 +760,16 @@ From `src/server`:
 npm run db:seed
 ```
 
-The seed creates fictional development records across the Campus Rental domain, including users, student profiles, housing inventory, applications, assignments, leases, roommate profiles, and roommate requests.
+The seed creates fictional development records across the Campus Rental domain, including:
+
+- Users
+- Student profiles
+- Housing inventory
+- Housing applications
+- Housing assignments
+- Leases
+- Roommate profiles
+- Roommate requests
 
 The seed is designed to be repeatable. Running `npm run db:seed` again does not duplicate the predefined demo records.
 
@@ -498,7 +787,52 @@ npm run db:migrate
 npm run db:seed
 ```
 
-Removing the Docker volume permanently deletes the current local PostgreSQL data and should only be done when intentionally resetting the development environment.
+After a fresh seed, map any Auth0 development identities to the appropriate local Campus Rental users before testing authenticated workflows.
+
+## Current Angular Authentication Behavior
+
+The Angular application includes a public login page at:
+
+```text
+http://localhost:4200/login
+```
+
+Authenticated users are redirected through Auth0 Universal Login and then enter the shared Campus Rental application shell.
+
+The shell loads the current local Campus Rental user using:
+
+```text
+GET /api/auth/me
+```
+
+Navigation is then adjusted using the local role.
+
+### Student Navigation
+
+```text
+Dashboard
+Housing Preferences
+My Application
+My Housing
+Roommates
+My Lease
+My Profile
+```
+
+Some Student workflow pages remain placeholders until their planned feature branches are implemented.
+
+### Housing Officer Navigation
+
+```text
+Dashboard
+Housing Inventory
+Applications
+Assignments
+```
+
+The Housing Officer workflow routes currently serve as placeholders for later inventory, application-review, and assignment feature branches.
+
+Frontend navigation improves usability but is not treated as a security boundary. Protected backend endpoints continue to enforce authentication and role authorization independently.
 
 ## Planned Campus Rental Features
 
@@ -508,7 +842,7 @@ The current implementation roadmap includes:
 1. Database foundation
 2. Campus Rental domain schema
 3. Angular frontend foundation
-4. Authentication, role-based authorization, and student profiles
+4. Authentication, role-based authorization, and Student Profile
 5. Housing inventory management
 6. Housing applications and housing preferences
 7. Direct roommate requests and AI-assisted roommate matching
@@ -524,7 +858,13 @@ The roadmap is a working plan and may be adjusted as implementation reveals bett
 
 Campus Rental uses a modular monolith rather than separate microservices. This keeps the project manageable while still providing clear module boundaries.
 
-Important business rules will be enforced by the backend and PostgreSQL rather than relying only on frontend behavior.
+Authentication is handled by Auth0, while Campus Rental authorization remains in the local PostgreSQL database.
+
+The application does not store passwords, password hashes, access tokens, or refresh tokens in PostgreSQL.
+
+Important business rules and authorization boundaries are enforced by the backend and PostgreSQL rather than relying only on frontend behavior.
+
+Student Profile ownership is derived from the authenticated local Campus Rental user rather than from a client-supplied user ID.
 
 Bed availability will be derived from active housing assignments instead of storing duplicate availability state directly on bed records.
 

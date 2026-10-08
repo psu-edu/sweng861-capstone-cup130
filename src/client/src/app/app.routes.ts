@@ -1,13 +1,23 @@
 import { Routes } from '@angular/router';
 
+import { authGuardFn } from '@auth0/auth0-angular';
+import { Login } from './pages/login/login';
 import { AppShell } from './layout/app-shell/app-shell';
 import { Dashboard } from './pages/dashboard/dashboard';
 import { Placeholder } from './pages/placeholder/placeholder';
+import {StudentProfilePage} from './pages/student-profile/student-profile';
 
 export const routes: Routes = [
   {
+    path: 'login',
+    component: Login,
+  },
+  {
     path: '',
     component: AppShell,
+    canActivate: [
+      authGuardFn,
+    ],
     children: [
       {
         path: '',
@@ -62,6 +72,37 @@ export const routes: Routes = [
           description:
             'Review your housing lease and signature status.',
         },
+      },
+      {
+        path: 'inventory',
+        component: Placeholder,
+        data: {
+          title: 'Housing Inventory',
+          description:
+            'Manage residence halls, rooms, and beds.',
+        },
+      },
+      {
+        path: 'applications',
+        component: Placeholder,
+        data: {
+          title: 'Applications',
+          description:
+            'Review student housing applications.',
+        },
+      },
+      {
+        path: 'assignments',
+        component: Placeholder,
+        data: {
+          title: 'Assignments',
+          description:
+            'Manage student housing assignments.',
+        },
+      },
+      {
+        path: 'profile',
+        component: StudentProfilePage,
       },
     ],
   },
