@@ -3,9 +3,11 @@ import express, {
   type Response,
 } from 'express';
 
-import {
-  checkDatabaseConnection,
-} from './db/pool.js';
+import {checkDatabaseConnection,} from './db/pool.js';
+
+import {authRouter,} from './auth/auth.routes.js';
+
+import {handleAuthenticationError,} from './auth/auth.middleware.js';
 
 const app = express();
 
@@ -33,6 +35,15 @@ app.get(
       });
     }
   },
+);
+
+app.use(
+  '/api/auth',
+  authRouter,
+);
+
+app.use(
+  handleAuthenticationError,
 );
 
 export default app;

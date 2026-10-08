@@ -47,6 +47,9 @@ services:
       DATABASE_USER: ${POSTGRES_USER:-campus_rental}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-campus_rental_dev}
 
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
+
     ports:
       - "${SERVER_PORT:-3000}:${SERVER_PORT:-3000}"
 
