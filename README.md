@@ -18,7 +18,7 @@ AI-assisted roommate matching is also part of the planned capstone functionality
 
 ## Project Status
 
-The backend foundation, PostgreSQL database foundation, and core Campus Rental domain schema are complete.
+The backend foundation, PostgreSQL database foundation, core Campus Rental domain schema, and Angular frontend foundation are complete.
 
 Currently implemented:
 
@@ -42,8 +42,17 @@ Currently implemented:
 - Dedicated automated test database
 - Database migration and seed commands
 - Combined lint, typecheck, and build verification command
+- Angular 22 frontend using TypeScript
+- Angular routing with shared application shell
+- Campus Rental design tokens and responsive layout
+- Initial Student navigation and placeholder routes
+- Frontend API service with backend health integration
+- Local and Docker-specific Angular API proxy configuration
+- Angular ESLint, Vitest, and production build tooling
+- Full Angular, Express, and PostgreSQL Docker Compose development environment
+- Angular hot reload through Docker
 
-The Angular frontend and application-level API, service, repository, authentication, housing workflow, roommate matching, and lease functionality will be implemented in later feature branches.
+Authentication, role-based authorization, domain API controllers/services/repositories, housing workflows, roommate matching, housing assignment, and lease functionality will be implemented in later feature branches.
 
 ## Repository Structure
 
@@ -51,24 +60,35 @@ The Angular frontend and application-level API, service, repository, authenticat
 /
 ├── docs/                       # Architecture and project documentation
 ├── src/
+│   ├── client/                 # Angular frontend
+│   │   ├── src/
+│   │   │   ├── app/
+│   │   │   │   ├── core/      # Shared frontend services
+│   │   │   │   ├── layout/    # Shared application shell
+│   │   │   │   └── pages/     # Routed application pages
+│   │   │   └── styles.css     # Global styles and design tokens
+│   │   ├── angular.json
+│   │   ├── eslint.config.js
+│   │   ├── package.json
+│   │   └── proxy.conf.json
 │   └── server/                 # Node.js / Express backend
 │       ├── src/
-│       │   ├── config/         # Environment and application configuration
+│       │   ├── config/
 │       │   ├── db/
-│       │   │   ├── migrations/ # Versioned SQL migration files
-│       │   │   └── seeds/      # Deterministic development/demo seed data
+│       │   │   ├── migrations/
+│       │   │   └── seeds/
 │       │   ├── app.ts
 │       │   └── server.ts
 │       ├── tests/
-│       │   ├── integration/    # PostgreSQL integration tests
-│       │   └── setup/          # Automated test database setup
+│       │   ├── integration/
+│       │   └── setup/
 │       ├── eslint.config.js
 │       ├── package.json
 │       ├── tsconfig.json
 │       └── vitest.config.ts
 ├── ops/
-│   └── docker/                 # Dockerfiles and Docker Compose configuration
-├── .env.example                # Example local environment configuration
+│   └── docker/
+├── .env.example
 ├── .dockerignore
 ├── .gitignore
 └── README.md
@@ -187,6 +207,50 @@ http://localhost:3000
 ```
 
 The backend verifies PostgreSQL connectivity before it begins accepting requests.
+
+## Frontend Local Development
+
+Frontend commands should be run from:
+
+```text
+src/client
+```
+
+Install dependencies:
+```powershell
+npm install
+```
+
+Start the Angular development server:
+```powershell
+npm start
+```
+
+The frontend is available at:
+```text
+http://localhost:4200
+```
+
+During local development, Angular proxies backend health requests to the Express API running at `http://localhost:3000`.
+
+The backend and PostgreSQL should therefore be running when verifying frontend API connectivity.
+
+###Frontend Verification
+
+Run ESLint:
+```powershell
+npm run lint
+```
+
+Run the frontend unit tests:
+```powershell
+npm test -- --watch=false
+```
+
+Run the production Angular build:
+```powershell
+npm run build
+```
 
 ## Health Check
 
@@ -341,12 +405,12 @@ Local workflow validation requires Docker to be running and port `5432` to be av
 
 ## Docker
 
-The current Docker environment supports the Express backend and PostgreSQL database.
+The current Docker environment supports the Angular frontend, Express backend, and PostgreSQL database.
 
-From the repository root, build and start both services:
+From the repository root, build and start all services:
 
 ```powershell
-docker compose --env-file .env -f ops/docker/docker-compose.yml up -d --build db server
+docker compose --env-file .env -f ops/docker/docker-compose.yml up -d --build
 ```
 
 Check container status:
@@ -355,12 +419,23 @@ Check container status:
 docker compose --env-file .env -f ops/docker/docker-compose.yml ps
 ```
 
-Both of the following should report healthy:
+The PostgreSQL and Express containers should report healthy, and the Angular client should report as running:
 
 ```text
 campus-rental-db
 campus-rental-server
+campus-rental-client
 ```
+
+Open the Angular application at:
+
+```text
+http://localhost:4200
+```
+
+The Angular client uses a Docker-specific proxy configuration to reach the Express service through the Compose network.
+
+Changes under `src/client/src` are bind-mounted into the client container so Angular development hot reload works without rebuilding the image.
 
 Test the containerized API:
 
