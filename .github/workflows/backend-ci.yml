@@ -1,0 +1,79 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18-bookworm
+
+        env:
+          POSTGRES_DB: campus_rental
+          POSTGRES_USER: campus_rental
+          POSTGRES_PASSWORD: campus_rental_ci
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd "pg_isready -U campus_rental -d campus_rental"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_HOST: localhost
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: campus_rental
+      DATABASE_USER: campus_rental
+      DATABASE_PASSWORD: campus_rental_ci
+      TEST_DATABASE_NAME: campus_rental_test
+
+      POSTGRES_DB: campus_rental
+      POSTGRES_USER: campus_rental
+      POSTGRES_PASSWORD: campus_rental_ci
+      POSTGRES_HOST_PORT: "5432"
+      POSTGRES_TEST_DB: campus_rental_test
+
+    defaults:
+      run:
+        working-directory: src/server
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: src/server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript type check
+        run: npm run typecheck
+
+      - name: Run PostgreSQL integration tests
+        run: npm test
+
+      - name: Build backend
+        run: npm run build
