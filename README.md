@@ -70,7 +70,8 @@ Authentication, role-based authorization, domain API controllers/services/reposi
 │   │   ├── angular.json
 │   │   ├── eslint.config.js
 │   │   ├── package.json
-│   │   └── proxy.conf.json
+│   │   ├── proxy.conf.json             # Local Angular API proxy
+│   │   └── proxy.conf.docker.json      # Docker Compose API proxy
 │   └── server/                 # Node.js / Express backend
 │       ├── src/
 │       │   ├── config/
@@ -235,7 +236,7 @@ During local development, Angular proxies backend health requests to the Express
 
 The backend and PostgreSQL should therefore be running when verifying frontend API connectivity.
 
-###Frontend Verification
+### Frontend Verification
 
 Run ESLint:
 ```powershell
