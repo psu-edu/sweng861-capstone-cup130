@@ -6,6 +6,7 @@ import { AppShell } from './layout/app-shell/app-shell';
 import { Dashboard } from './pages/dashboard/dashboard';
 import { Placeholder } from './pages/placeholder/placeholder';
 import {StudentProfilePage} from './pages/student-profile/student-profile';
+import {HousingInventoryPage,} from './pages/housing-inventory/housing-inventory';
 
 export const routes: Routes = [
   {
@@ -75,12 +76,7 @@ export const routes: Routes = [
       },
       {
         path: 'inventory',
-        component: Placeholder,
-        data: {
-          title: 'Housing Inventory',
-          description:
-            'Manage residence halls, rooms, and beds.',
-        },
+        component: HousingInventoryPage,
       },
       {
         path: 'applications',
