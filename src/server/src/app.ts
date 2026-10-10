@@ -10,6 +10,7 @@ import {studentProfileRouter,} from './modules/student-profile/student-profile.r
 import {housingInventoryRouter,housingOptionsRouter,} from './modules/housing-inventory/housing-inventory.routes.js';
 import {housingOfficerApplicationRouter,studentHousingApplicationRouter,} from './modules/housing-application/housing-application.routes.js';
 import {studentRoommateMatchingRouter,} from './modules/roommate-matching/roommate-matching.routes.js';
+import {housingAssignmentRouter,studentHousingAssignmentRouter,} from './modules/housing-assignment/housing-assignment.routes.js';
 
 const app = express();
 
@@ -72,6 +73,16 @@ app.use(
 app.use(
   '/api/student/roommates',
   studentRoommateMatchingRouter,
+);
+
+app.use(
+  '/api/assignments',
+  housingAssignmentRouter,
+);
+
+app.use(
+  '/api/student/housing-assignments',
+  studentHousingAssignmentRouter,
 );
 
 app.use(

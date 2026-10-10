@@ -4,9 +4,11 @@ import { authGuardFn } from '@auth0/auth0-angular';
 import { AppShell } from './layout/app-shell/app-shell';
 import { Dashboard } from './pages/dashboard/dashboard';
 import { HousingApplicationsPage } from './pages/housing-applications/housing-applications';
+import { HousingAssignmentsPage } from './pages/housing-assignments/housing-assignments';
 import { HousingInventoryPage } from './pages/housing-inventory/housing-inventory';
 import { HousingOptionsPage } from './pages/housing-options/housing-options';
 import { Login } from './pages/login/login';
+import { MyHousingPage } from './pages/my-housing/my-housing';
 import { Placeholder } from './pages/placeholder/placeholder';
 import {RoommateMatchingPage} from './pages/roommate-matching/roommate-matching';
 import {RoommateProfilePage} from './pages/roommate-profile/roommate-profile';
@@ -46,15 +48,7 @@ export const routes: Routes = [
       },
       {
         path: 'housing',
-        component: Placeholder,
-
-        data: {
-          title:
-            'My Housing',
-
-          description:
-            'View your assigned university housing.',
-        },
+        component: MyHousingPage,
       },
       {
         path: 'roommates/profile',
@@ -86,11 +80,7 @@ export const routes: Routes = [
       },
       {
         path: 'assignments',
-        component: Placeholder,
-        data: {
-          title: 'Assignments',
-          description: 'Manage student housing assignments.',
-        },
+        component: HousingAssignmentsPage,
       },
       {
         path: 'profile',

@@ -1,0 +1,1211 @@
+<section class="page">
+  <header class="page-header">
+    <p class="eyebrow">
+      Housing Officer
+    </p>
+
+    <h1>Housing Assignments</h1>
+
+    <p>
+      Review approved applications, roommate
+      information, and available inventory before
+      reserving a room and bed.
+    </p>
+  </header>
+
+  @if (message()) {
+    <div
+      class="page-message success-message"
+      role="status"
+    >
+      {{ message() }}
+    </div>
+  }
+
+  @if (error()) {
+    <div
+      class="page-message error-message"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading housing assignments...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="card">
+      <div
+        class="page-message error-message"
+        role="alert"
+      >
+        {{ loadError() }}
+      </div>
+    </div>
+  } @else {
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="summary-value">
+          {{
+            applications().filter(
+              application =>
+                application.status
+                  === 'APPROVED'
+            ).length
+          }}
+        </span>
+
+        <span class="summary-label">
+          Awaiting Assignment
+        </span>
+      </article>
+
+      <article class="summary-card">
+        <span class="summary-value">
+          {{
+            assignments().filter(
+              assignment =>
+                assignment.status
+                  === 'RESERVED'
+            ).length
+          }}
+        </span>
+
+        <span class="summary-label">
+          Reserved
+        </span>
+      </article>
+
+      <article class="summary-card">
+        <span class="summary-value">
+          {{
+            assignments().filter(
+              assignment =>
+                assignment.status
+                  === 'CONFIRMED'
+            ).length
+          }}
+        </span>
+
+        <span class="summary-label">
+          Confirmed
+        </span>
+      </article>
+    </section>
+
+    @if (
+      applications().length === 0
+    ) {
+      <div class="card empty-state">
+        <h2>No applications require assignment</h2>
+
+        <p>
+          Approved applications will appear here
+          when they are ready for room and bed
+          placement.
+        </p>
+      </div>
+    } @else {
+      <section class="table-card">
+        <div class="table-scroll">
+          <table
+            aria-label="Housing assignment applications"
+          >
+            <thead>
+              <tr>
+                <th scope="col">
+                  Student
+                </th>
+
+                <th scope="col">
+                  Academic Year
+                </th>
+
+                <th scope="col">
+                  Housing Preference
+                </th>
+
+                <th scope="col">
+                  Accepted Roommate
+                </th>
+
+                <th scope="col">
+                  Status
+                </th>
+
+                <th scope="col">
+                  Action
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (
+                application
+                  of applications();
+                track application.id
+              ) {
+                <tr
+                  [class.selected-row]="
+                    selectedApplication()?.id
+                      === application.id
+                  "
+                >
+                  <td>
+                    <strong>
+                      {{ application.firstName }}
+                      {{ application.lastName }}
+                    </strong>
+
+                    <span class="secondary-text">
+                      {{
+                        application
+                          .studentNumber
+                      }}
+                    </span>
+                  </td>
+
+                  <td>
+                    {{ application.academicYear }}
+                  </td>
+
+                  <td>
+                    {{
+                      application
+                        .preferredBuildingName
+                    }}
+
+                    <span class="secondary-text">
+                      {{
+                        roomStyleLabel(
+                          application
+                            .preferredRoomStyle
+                        )
+                      }}
+                    </span>
+                  </td>
+
+                  <td>
+                    {{
+                      roommateSummary(
+                        application
+                      )
+                    }}
+                  </td>
+
+                  <td>
+                    <span
+                      class="status-badge"
+                      [attr.data-status]="
+                        application.status
+                      "
+                    >
+                      {{
+                        applicationStatusLabel(
+                          application.status
+                        )
+                      }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <button
+                      type="button"
+                      class="secondary-button small-button"
+                      [disabled]="saving()"
+                      (click)="
+                        reviewApplication(
+                          application
+                        )
+                      "
+                    >
+                      {{
+                        application.status
+                          === 'APPROVED'
+                          ? 'Assign'
+                          : 'Review'
+                      }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+
+    @if (
+      selectedApplication();
+      as application
+    ) {
+      <section class="assignment-panel">
+        <header class="panel-header">
+          <div>
+            <p class="section-label">
+              Assignment Review
+            </p>
+
+            <h2>
+              {{ application.firstName }}
+              {{ application.lastName }}
+            </h2>
+          </div>
+
+          <div class="panel-header-actions">
+            <span
+              class="status-badge"
+              [attr.data-status]="
+                application.status
+              "
+            >
+              {{
+                applicationStatusLabel(
+                  application.status
+                )
+              }}
+            </span>
+
+            <button
+              type="button"
+              class="text-button"
+              [disabled]="saving()"
+              (click)="closeReview()"
+            >
+              Close Review
+            </button>
+          </div>
+        </header>
+
+        <div class="detail-grid">
+          <section class="detail-section">
+            <h3>Student</h3>
+
+            <dl class="detail-list">
+              <div>
+                <dt>Student Number</dt>
+
+                <dd>
+                  {{ application.studentNumber }}
+                </dd>
+              </div>
+
+              <div>
+                <dt>Academic Status</dt>
+
+                <dd>
+                  {{
+                    enumLabel(
+                      application.academicStatus
+                    )
+                  }}
+                </dd>
+              </div>
+
+              <div>
+                <dt>Major</dt>
+
+                <dd>
+                  {{ application.major }}
+                </dd>
+              </div>
+
+              <div>
+                <dt>
+                  Anticipated Graduation
+                </dt>
+
+                <dd>
+                  {{
+                    graduationLabel(
+                      application
+                    )
+                  }}
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="detail-section">
+            <h3>Housing Preference</h3>
+
+            <dl class="detail-list">
+              <div>
+                <dt>Academic Year</dt>
+
+                <dd>
+                  {{ application.academicYear }}
+                </dd>
+              </div>
+
+              <div>
+                <dt>Preferred Hall</dt>
+
+                <dd>
+                  {{
+                    application
+                      .preferredBuildingName
+                  }}
+                </dd>
+              </div>
+
+              <div>
+                <dt>Preferred Room Style</dt>
+
+                <dd>
+                  {{
+                    roomStyleLabel(
+                      application
+                        .preferredRoomStyle
+                    )
+                  }}
+                </dd>
+              </div>
+            </dl>
+
+            <p class="preference-note">
+              Preferences are considered during
+              placement but are not guaranteed.
+            </p>
+          </section>
+
+          <section class="detail-section">
+            <h3>Accepted Roommate</h3>
+
+            @if (
+              application.roommates.length
+                === 0
+            ) {
+              <p class="muted-text">
+                No accepted roommate request is
+                associated with this academic
+                year.
+              </p>
+            } @else {
+              <div class="roommate-list">
+                @for (
+                  roommate
+                    of application.roommates;
+                  track roommate.requestId
+                ) {
+                  <article class="roommate-card">
+                    <strong>
+                      {{ roommate.firstName }}
+                      {{ roommate.lastName }}
+                    </strong>
+
+                    <span class="secondary-text">
+                      {{ roommate.studentNumber }}
+                    </span>
+
+                    <span class="secondary-text">
+                      Application:
+                      {{
+                        roommate.applicationStatus
+                          === null
+                          ? 'Not available'
+                          : applicationStatusLabel(
+                              roommate.applicationStatus
+                            )
+                      }}
+                    </span>
+
+                    @if (
+                      roommateApplication(
+                        roommate
+                      );
+                      as roommateApplication
+                    ) {
+                      <span class="secondary-text">
+                        Preference:
+                        {{
+                          roommateApplication
+                            .preferredBuildingName
+                        }}
+                        ·
+                        {{
+                          roomStyleLabel(
+                            roommateApplication
+                              .preferredRoomStyle
+                          )
+                        }}
+                      </span>
+                    }
+
+                    @if (
+                      assignedRoommateAssignment(
+                        roommate
+                      );
+                      as roommateAssignment
+                    ) {
+                      <span class="secondary-text">
+                        Assigned:
+                        {{
+                          roommateAssignment
+                            .buildingName
+                        }}
+                        · Room
+                        {{
+                          roommateAssignment
+                            .roomNumber
+                        }}
+                        · Bed
+                        {{
+                          roommateAssignment
+                            .bedLabel
+                        }}
+                      </span>
+                    }
+                  </article>
+                }
+              </div>
+            }
+          </section>
+        </div>
+
+        @if (
+          application.status
+            === 'HOUSING_ASSIGNED'
+        ) {
+          @if (
+            currentAssignment(
+              application
+            );
+            as assignment
+          ) {
+            <section class="current-assignment">
+              <div>
+                <p class="section-label">
+                  Current Assignment
+                </p>
+
+                <h3>
+                  {{ assignment.buildingName }}
+                  · Room
+                  {{ assignment.roomNumber }}
+                  · Bed
+                  {{ assignment.bedLabel }}
+                </h3>
+
+                <p>
+                  {{
+                    roomStyleLabel(
+                      assignment.roomStyle
+                    )
+                  }}
+                  ·
+                  {{ assignment.academicYear }}
+                </p>
+              </div>
+
+              <div class="current-assignment-actions">
+                <span
+                  class="status-badge"
+                  [attr.data-status]="
+                    assignment.status
+                  "
+                >
+                  {{
+                    assignmentStatusLabel(
+                      assignment.status
+                    )
+                  }}
+                </span>
+
+                @if (
+                  assignment.status
+                    === 'RESERVED'
+                ) {
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    [disabled]="saving()"
+                    (click)="startChangeAssignment()"
+                  >
+                    Change Assignment
+                  </button>
+
+                  <button
+                    type="button"
+                    class="secondary-button"
+                    [disabled]="saving()"
+                    (click)="
+                      cancelAssignmentOnly(
+                        assignment
+                      )
+                    "
+                  >
+                    Cancel Assignment
+                  </button>
+
+                  <button
+                    type="button"
+                    class="danger-button"
+                    [disabled]="saving()"
+                    (click)="
+                      cancelApplication(
+                        assignment
+                      )
+                    "
+                  >
+                    Cancel Application
+                  </button>
+                }
+              </div>
+            </section>
+          }
+        }
+
+        @if (
+          application.status
+            === 'APPROVED'
+          || changingAssignment()
+        ) {
+          <section class="assignment-workflow">
+            <header class="workflow-header">
+              <div>
+                <p class="section-label">
+                  {{
+                    changingAssignment()
+                      ? 'Assignment Change'
+                      : 'Placement'
+                  }}
+                </p>
+
+                <h3>
+                  {{
+                    changingAssignment()
+                      ? 'Choose a New Room and Bed'
+                      : 'Select Assignment Type'
+                  }}
+                </h3>
+
+                <p>
+                  @if (
+                    changingAssignment()
+                  ) {
+                    Select another available bed.
+                    The current reservation will
+                    remain in the assignment
+                    history and the housing
+                    application will stay active.
+                  } @else {
+                    Reserve one bed for this
+                    Student or place an eligible
+                    accepted roommate pair into
+                    two beds in the same room.
+                  }
+                </p>
+              </div>
+
+              @if (
+                changingAssignment()
+              ) {
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="saving()"
+                  (click)="stopChangeAssignment()"
+                >
+                  Cancel Change
+                </button>
+              }
+            </header>
+
+            @if (
+              !changingAssignment()
+            ) {
+              <div class="mode-buttons">
+                <button
+                  type="button"
+                  class="mode-button"
+                  [class.active-mode]="
+                    assignmentMode()
+                      === 'INDIVIDUAL'
+                  "
+                  [disabled]="saving()"
+                  (click)="
+                    setAssignmentMode(
+                      'INDIVIDUAL'
+                    )
+                  "
+                >
+                  Individual Assignment
+                </button>
+
+                <button
+                  type="button"
+                  class="mode-button"
+                  [class.active-mode]="
+                    assignmentMode()
+                      === 'PAIR'
+                  "
+                  [disabled]="
+                    saving()
+                    || eligibleRoommates()
+                      .length === 0
+                  "
+                  (click)="
+                    setAssignmentMode(
+                      'PAIR'
+                    )
+                  "
+                >
+                  Roommate Pair
+                </button>
+              </div>
+
+              @if (
+                eligibleRoommates().length
+                  === 0
+              ) {
+                <p class="helper-text">
+                  No accepted roommate currently
+                  has an approved application that
+                  is ready for pair placement.
+                </p>
+              }
+            }
+
+            @if (detailLoading()) {
+              <div class="inventory-loading">
+                <p>
+                  Loading available inventory...
+                </p>
+              </div>
+            }
+
+            @if (
+              options();
+              as assignmentOptions
+            ) {
+              <div class="inventory-heading">
+                <div>
+                  <h3>Available Inventory</h3>
+
+                  <p>
+                    Preferred matches are listed
+                    first, but the Housing Officer
+                    may select other available
+                    inventory when needed.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="
+                    detailLoading()
+                    || saving()
+                  "
+                  (click)="refreshInventory()"
+                >
+                  Refresh Inventory
+                </button>
+              </div>
+
+              @if (
+                !hasAssignableInventory()
+              ) {
+                <div class="empty-inventory">
+                  <h4>
+                    No compatible available
+                    inventory
+                  </h4>
+
+                  <p>
+                    {{
+                      assignmentMode()
+                        === 'PAIR'
+                        && !changingAssignment()
+                        ? 'No active room currently has two available beds for roommate-pair placement.'
+                        : 'No active beds are currently available for assignment.'
+                    }}
+                  </p>
+                </div>
+              } @else {
+                <div class="inventory-list">
+                  @for (
+                    building
+                      of assignmentOptions
+                        .buildings;
+                    track building.id
+                  ) {
+                    @if (
+                      buildingHasAssignableRoom(
+                        building
+                      )
+                    ) {
+                      <article class="building-card">
+                        <header class="building-header">
+                          <div>
+                            <h4>
+                              {{ building.name }}
+                            </h4>
+
+                            <span class="secondary-text">
+                              {{ building.address }}
+                            </span>
+                          </div>
+
+                          @if (
+                            building
+                              .preferredBuilding
+                          ) {
+                            <span class="preference-badge">
+                              Preferred Hall
+                            </span>
+                          }
+                        </header>
+
+                        <div class="room-list">
+                          @for (
+                            room
+                              of building.rooms;
+                            track room.id
+                          ) {
+                            @if (
+                              roomCanSupportMode(
+                                room
+                              )
+                            ) {
+                              <div
+                                class="room-row"
+                                [class.selected-room]="
+                                  selectedRoomId()
+                                    === room.id
+                                "
+                              >
+                                <div class="room-details">
+                                  <strong>
+                                    Room
+                                    {{ room.roomNumber }}
+                                  </strong>
+
+                                  <span>
+                                    {{
+                                      roomStyleLabel(
+                                        room.roomStyle
+                                      )
+                                    }}
+                                    ·
+                                    {{
+                                      room.availableBedCount
+                                    }}
+                                    available
+                                    {{
+                                      room.availableBedCount
+                                        === 1
+                                        ? 'bed'
+                                        : 'beds'
+                                    }}
+                                  </span>
+
+                                  <div class="preference-tags">
+                                    @if (
+                                      room.matchesPreferences
+                                    ) {
+                                      <span class="preference-badge">
+                                        Full Preference Match
+                                      </span>
+                                    } @else if (
+                                      room.preferredRoomStyle
+                                    ) {
+                                      <span class="preference-badge">
+                                        Preferred Style
+                                      </span>
+                                    }
+
+                                    @if (
+                                      assignedRoommateInRoom(
+                                        room
+                                      );
+                                      as roommateAssignment
+                                    ) {
+                                      <span class="preference-badge">
+                                        {{
+                                          roommateAssignment
+                                            .firstName
+                                        }}
+                                        {{
+                                          roommateAssignment
+                                            .lastName
+                                        }}
+                                        Assigned Here
+                                      </span>
+                                    }
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  class="secondary-button small-button"
+                                  [disabled]="saving()"
+                                  (click)="
+                                    selectRoom(
+                                      room
+                                    )
+                                  "
+                                >
+                                  {{
+                                    selectedRoomId()
+                                      === room.id
+                                      ? 'Selected'
+                                      : 'Select Room'
+                                  }}
+                                </button>
+                              </div>
+                            }
+                          }
+                        </div>
+                      </article>
+                    }
+                  }
+                </div>
+
+                @if (
+                  selectedRoom();
+                  as room
+                ) {
+                  <section class="selection-card">
+                    <header>
+                      <p class="section-label">
+                        Selected Room
+                      </p>
+
+                      <h3>
+                        {{
+                          selectedBuildingName()
+                        }}
+                        · Room
+                        {{ room.roomNumber }}
+                      </h3>
+
+                      <p>
+                        {{
+                          roomStyleLabel(
+                            room.roomStyle
+                          )
+                        }}
+                      </p>
+                    </header>
+
+                    @if (
+                      changingAssignment()
+                      || assignmentMode()
+                        === 'INDIVIDUAL'
+                    ) {
+                      <div class="form-field">
+                        <label for="studentBed">
+                          Bed for
+                          {{ application.firstName }}
+                          {{ application.lastName }}
+                        </label>
+
+                        <select
+                          id="studentBed"
+                          [formControl]="
+                            selectedBedControl
+                          "
+                        >
+                          @for (
+                            bed
+                              of availableBeds(
+                                room
+                              );
+                            track bed.id
+                          ) {
+                            <option
+                              [value]="bed.id"
+                            >
+                              Bed
+                              {{ bed.bedLabel }}
+                            </option>
+                          }
+                        </select>
+                      </div>
+
+                      <div class="selection-actions">
+                        <button
+                          type="button"
+                          class="primary-button"
+                          [disabled]="saving()"
+                          (click)="
+                            changingAssignment()
+                              ? changeCurrentAssignment()
+                              : createIndividualAssignment()
+                          "
+                        >
+                          {{
+                            saving()
+                              ? 'Saving...'
+                              : changingAssignment()
+                                ? 'Change Assignment'
+                                : 'Reserve Bed'
+                          }}
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="pair-form-grid">
+                        <div class="form-field full-width">
+                          <label for="roommateApplication">
+                            Accepted Roommate
+                          </label>
+
+                          <select
+                            id="roommateApplication"
+                            [formControl]="
+                              selectedRoommateApplicationControl
+                            "
+                          >
+                            @for (
+                              roommate
+                                of eligibleRoommates();
+                              track roommate.requestId
+                            ) {
+                              <option
+                                [value]="
+                                  roommate.applicationId
+                                "
+                              >
+                                {{
+                                  roommate.firstName
+                                }}
+                                {{
+                                  roommate.lastName
+                                }}
+                                ·
+                                {{
+                                  roommate.studentNumber
+                                }}
+                              </option>
+                            }
+                          </select>
+                        </div>
+
+                        <div class="form-field">
+                          <label for="primaryBed">
+                            Bed for
+                            {{ application.firstName }}
+                            {{ application.lastName }}
+                          </label>
+
+                          <select
+                            id="primaryBed"
+                            [formControl]="
+                              selectedBedControl
+                            "
+                          >
+                            @for (
+                              bed
+                                of availableBeds(
+                                  room
+                                );
+                              track bed.id
+                            ) {
+                              <option
+                                [value]="bed.id"
+                                [disabled]="
+                                  bed.id
+                                    === roommateBedControl.value
+                                "
+                              >
+                                Bed
+                                {{ bed.bedLabel }}
+                              </option>
+                            }
+                          </select>
+                        </div>
+
+                        <div class="form-field">
+                          <label for="roommateBed">
+                            Bed for
+                            {{
+                              selectedRoommate()
+                                ?.firstName
+                              ?? 'Roommate'
+                            }}
+                            {{
+                              selectedRoommate()
+                                ?.lastName
+                              ?? ''
+                            }}
+                          </label>
+
+                          <select
+                            id="roommateBed"
+                            [formControl]="
+                              roommateBedControl
+                            "
+                          >
+                            @for (
+                              bed
+                                of availableBeds(
+                                  room
+                                );
+                              track bed.id
+                            ) {
+                              <option
+                                [value]="bed.id"
+                                [disabled]="
+                                  bed.id
+                                    === selectedBedControl.value
+                                "
+                              >
+                                Bed
+                                {{ bed.bedLabel }}
+                              </option>
+                            }
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="selection-actions">
+                        <button
+                          type="button"
+                          class="primary-button"
+                          [disabled]="saving()"
+                          (click)="
+                            createPairAssignment()
+                          "
+                        >
+                          {{
+                            saving()
+                              ? 'Reserving...'
+                              : 'Reserve Roommate Pair'
+                          }}
+                        </button>
+                      </div>
+                    }
+                  </section>
+                }
+              }
+            }
+          </section>
+        }
+      </section>
+    }
+
+    @if (
+      assignments().length > 0
+    ) {
+      <section class="records-section">
+        <header class="records-header">
+          <div>
+            <p class="section-label">
+              History
+            </p>
+
+            <h2>Assignment Records</h2>
+          </div>
+
+          <p>
+            Historical cancelled and superseded
+            records remain visible rather than
+            being deleted.
+          </p>
+        </header>
+
+        <section class="table-card">
+          <div class="table-scroll">
+            <table
+              aria-label="Housing assignment records"
+            >
+              <thead>
+                <tr>
+                  <th scope="col">
+                    Student
+                  </th>
+
+                  <th scope="col">
+                    Academic Year
+                  </th>
+
+                  <th scope="col">
+                    Housing
+                  </th>
+
+                  <th scope="col">
+                    Reserved
+                  </th>
+
+                  <th scope="col">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (
+                  assignment
+                    of assignments();
+                  track assignment.id
+                ) {
+                  <tr>
+                    <td>
+                      <strong>
+                        {{ assignment.firstName }}
+                        {{ assignment.lastName }}
+                      </strong>
+
+                      <span class="secondary-text">
+                        {{
+                          assignment.studentNumber
+                        }}
+                      </span>
+                    </td>
+
+                    <td>
+                      {{ assignment.academicYear }}
+                    </td>
+
+                    <td>
+                      {{ assignment.buildingName }}
+                      · Room
+                      {{ assignment.roomNumber }}
+                      · Bed
+                      {{ assignment.bedLabel }}
+
+                      <span class="secondary-text">
+                        {{
+                          roomStyleLabel(
+                            assignment.roomStyle
+                          )
+                        }}
+                      </span>
+                    </td>
+
+                    <td>
+                      {{
+                        formatDate(
+                          assignment.reservedAt
+                        )
+                      }}
+                    </td>
+
+                    <td>
+                      <span
+                        class="status-badge"
+                        [attr.data-status]="
+                          assignment.status
+                        "
+                      >
+                        {{
+                          assignmentStatusLabel(
+                            assignment.status
+                          )
+                        }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    }
+  }
+</section>

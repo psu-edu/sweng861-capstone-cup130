@@ -8,17 +8,19 @@
 
 Campus Rental is a full-stack university housing application being developed for the SWENG 861 Course Capstone Project.
 
-The application is designed around two primary users: Students and Housing Officers. Students can manage a housing application, submit residence hall and room-style preferences, request a known roommate or participate in AI-assisted roommate matching, and track the status of their housing workflow. Later workflow steps will allow Students to receive a housing assignment and complete the lease-signing process.
+The application is designed around two primary users: Students and Housing Officers. Students can manage a housing application, submit residence hall and room-style preferences, request a known roommate or participate in AI-assisted roommate matching, receive a housing assignment, and track the status of their housing workflow. The remaining lease workflow will allow Students to review and electronically sign their housing lease.
 
-Housing Officers manage residence hall inventory, review student applications and housing preferences, maintain private application notes, approve applications, and will eventually use roommate information to make final room and bed assignments and manage the leasing workflow.
+Housing Officers manage residence hall inventory, review student applications and housing preferences, maintain private application notes, approve applications, review roommate information, and make final room and bed assignments.
 
-Students do not directly claim a specific room or bed. Instead, they submit housing preferences and Housing Officers make the final assignment based on available inventory and roommate information. Database constraints and backend transactions protect the assignment process from conflicting bed reservations.
+Students do not directly claim a specific room or bed. Instead, they submit housing preferences and Housing Officers make the final assignment based on available inventory, roommate information, and housing placement rules.
 
-AI-assisted roommate matching provides ranked, explainable roommate recommendations based primarily on structured lifestyle preferences with a smaller semantic free-text component. Recommendations are advisory and never automatically pair students or make housing assignments. Students must still send and accept a roommate request before a roommate pair is established.
+The housing assignment workflow uses PostgreSQL transactions and database constraints to prevent conflicting reservations. Assignment operations also enforce room gender compatibility rules so that incompatible Students cannot be assigned to the same room.
+
+AI-assisted roommate matching provides ranked, explainable roommate recommendations based primarily on structured lifestyle preferences with a smaller semantic free-text component. Recommendations are advisory and never automatically pair Students or make housing assignments. Students must still send and accept a roommate request before a roommate pair is established.
 
 ## Project Status
 
-The project currently includes the backend, database, Angular frontend, authentication and authorization foundation, Student Profile workflow, housing inventory management, housing applications and preferences, direct roommate requests, and AI-assisted roommate matching.
+The project currently includes the backend, database, Angular frontend, authentication and authorization, Student Profile workflow, housing inventory management, housing applications and preferences, direct roommate requests, AI-assisted roommate matching, and the Housing Officer room and bed assignment workflow.
 
 Currently implemented:
 
@@ -95,13 +97,41 @@ Currently implemented:
 - Gender and protected or sensitive characteristics excluded from AI compatibility scoring
 - Roommate Matching, Roommate Profile, and Roommate Requests Angular screens
 - AI recommendations remain advisory and never automatically create roommate requests or housing assignments
-- Validation and user-friendly application, inventory, and roommate API errors
+- Housing Assignment repository, service, controller, and API routes
+- Housing Officer Housing Assignments Angular screen
+- Assignment-ready application review with housing preferences and accepted roommate information
+- Available room and bed selection with preferred inventory displayed first
+- Individual housing assignment and bed reservation workflow
+- Transactional roommate-pair assignment into two beds within the same room
+- Backend verification of accepted roommate consent before pair placement
+- Transactional application transition from `APPROVED` to `HOUSING_ASSIGNED`
+- PostgreSQL protection against multiple active assignments for the same bed
+- HTTP `409 Conflict` responses for conflicting assignment operations
+- Transactional changes to existing reserved housing assignments
+- Assignment-only cancellation that returns an application to `APPROVED`
+- Housing application and assignment cancellation with bed release
+- Preservation of cancelled assignments as historical records
+- Protection against assignment changes when a lease has already been sent for signature
+- Voiding of unfinished local leases when an associated reservation is changed or cancelled
+- Room gender occupancy rules enforced by PostgreSQL
+- Housing Officer inventory filtering based on room gender compatibility
+- Support for `UNSPECIFIED` gender placement into an otherwise unoccupied room
+- Concurrent assignment protection when different-gender Students attempt to reserve beds in the same room
+- Housing Officer display of accepted roommates already assigned to a room
+- Student My Housing Angular screen
+- Student display of reserved and confirmed assignments
+- Student display of previous cancelled and superseded assignments
+- Room occupancy counts showing total, occupied, and open beds
+- Display of accepted roommates assigned to the same room without exposing unrelated occupants
+- Validation and user-friendly application, inventory, roommate, and assignment API errors
 - Backend integration testing with Vitest and PostgreSQL
 - Supertest API integration testing
 - Unit testing for compatibility scoring and AI providers
+- Housing assignment transaction, concurrency, authorization, and lifecycle tests
+- Room gender policy integration tests
 - Consolidated backend and frontend verification commands
 
-Final housing assignment, lease processing, and the remaining end-to-end workflow are planned for later feature branches.
+The remaining major functional feature is lease generation and electronic signature. The later roadmap also includes end-to-end testing and hardening, CI/CD and observability improvements, and final project documentation and presentation materials.
 
 ## Repository Structure
 
@@ -123,64 +153,65 @@ The repository is organized so frontend, backend, infrastructure, project docume
 │   │   │
 │   │   ├── src/
 │   │   │   ├── app/
-│   │   │   │   ├── core/            # Frontend configuration and shared application services
-│   │   │   │   │   ├── config/      # Auth0 and other shared frontend configuration
-│   │   │   │   │   └── services/    # Typed API clients and shared user/application services
+│   │   │   │   ├── core/             # Frontend configuration and shared application services
+│   │   │   │   │   ├── config/       # Auth0 and other shared frontend configuration
+│   │   │   │   │   └── services/     # Typed API clients and shared user/application services
 │   │   │   │   │
-│   │   │   │   ├── layout/          # Shared authenticated application layout
-│   │   │   │   │   └── app-shell/   # Navigation, user information, logout, and page shell
+│   │   │   │   ├── layout/           # Shared authenticated application layout
+│   │   │   │   │   └── app-shell/    # Navigation, user information, logout, and page shell
 │   │   │   │   │
-│   │   │   │   ├── pages/           # Route-level Angular screens
-│   │   │   │   │   ├── dashboard/              # Role-aware Student and Housing Officer dashboard
-│   │   │   │   │   ├── housing-applications/   # Housing Officer application review and approval
-│   │   │   │   │   ├── housing-inventory/      # Building → Room → Bed inventory administration
-│   │   │   │   │   ├── housing-options/        # Student housing availability and preference selection
+│   │   │   │   ├── pages/            # Route-level Angular screens
+│   │   │   │   │   ├── dashboard/              # Student and Housing Officer dashboards
+│   │   │   │   │   ├── housing-applications/   # Housing Officer application review
+│   │   │   │   │   ├── housing-assignments/    # Housing Officer room and bed assignment
+│   │   │   │   │   ├── housing-inventory/      # Building, Room, and Bed administration
+│   │   │   │   │   ├── housing-options/        # Student housing preferences
 │   │   │   │   │   ├── login/                  # Public login and Auth0 entry page
-│   │   │   │   │   ├── placeholder/            # Temporary screens for future roadmap features
+│   │   │   │   │   ├── my-housing/             # Student housing assignment view
+│   │   │   │   │   ├── placeholder/            # Temporary pages for remaining features
 │   │   │   │   │   ├── roommate-matching/      # AI-assisted roommate recommendations
 │   │   │   │   │   ├── roommate-profile/       # Roommate lifestyle profile and AI opt-in
-│   │   │   │   │   ├── roommate-requests/      # Direct roommate search and request management
-│   │   │   │   │   ├── student-application/    # Student application status and lifecycle view
-│   │   │   │   │   └── student-profile/        # Student Profile view and editing
+│   │   │   │   │   ├── roommate-requests/      # Direct roommate requests
+│   │   │   │   │   ├── student-application/    # Student application status
+│   │   │   │   │   └── student-profile/        # Student Profile editing
 │   │   │   │   │
-│   │   │   │   ├── app.config.ts    # Angular application providers and Auth0 setup
-│   │   │   │   ├── app.routes.ts    # Application route definitions
-│   │   │   │   └── app.ts           # Angular root component
+│   │   │   │   ├── app.config.ts     # Angular application providers
+│   │   │   │   ├── app.routes.ts     # Application route definitions
+│   │   │   │   └── app.ts            # Angular root component
 │   │   │   │
-│   │   │   └── styles.css            # Global styles and Campus Rental design tokens
+│   │   │   └── styles.css            # Global styles and design tokens
 │   │   │
-│   │   ├── angular.json              # Angular workspace and build configuration
+│   │   ├── angular.json              # Angular workspace configuration
 │   │   ├── eslint.config.js          # Frontend ESLint configuration
 │   │   ├── package.json              # Frontend dependencies and npm scripts
-│   │   ├── proxy.conf.json           # Local Angular-to-Express development proxy
+│   │   ├── proxy.conf.json           # Local Angular-to-Express proxy
 │   │   ├── proxy.conf.docker.json    # Docker Compose Angular-to-Express proxy
-│   │   ├── tsconfig.app.json         # Angular application TypeScript configuration
-│   │   ├── tsconfig.json             # Shared frontend TypeScript configuration
-│   │   └── tsconfig.spec.json        # Frontend test TypeScript configuration
+│   │   └── tsconfig.json             # Shared frontend TypeScript configuration
 │   │
 │   └── server/                       # Node.js / Express backend application
 │       ├── src/
-│       │   ├── auth/                 # Auth0 JWT validation, local identity resolution, and RBAC
+│       │   ├── auth/                 # Auth0 JWT validation, local identity, and RBAC
 │       │   │
-│       │   ├── config/               # Environment-variable loading and validation
+│       │   ├── config/               # Environment configuration and validation
 │       │   │
-│       │   ├── db/                   # PostgreSQL connection, migration, and seed infrastructure
-│       │   │   ├── migrations/       # Versioned immutable SQL schema migrations
-│       │   │   └── seeds/            # Deterministic development/demo seed definitions
+│       │   ├── db/                   # PostgreSQL connection, migrations, and seeds
+│       │   │   ├── migrations/       # Versioned SQL migrations
+│       │   │   └── seeds/            # Development/demo seed definitions
 │       │   │
-│       │   ├── modules/              # Domain-focused backend modules
+│       │   ├── modules/
 │       │   │   ├── housing-application/  # Application lifecycle, preferences, approval, and notes
+│       │   │   ├── housing-assignment/
 │       │   │   ├── housing-inventory/    # Building, Room, Bed, availability, and housing options
 │       │   │   ├── roommate-matching/    # Direct roommate requests and AI-assisted matching
 │       │   │   └── student-profile/      # Student Profile retrieval and editing
 │       │   │
 │       │   ├── app.ts                # Express application and route registration
-│       │   └── server.ts             # Server startup and database connectivity check
+│       │   └── server.ts             # Server startup and connectivity check
 │       │
 │       ├── tests/
-│       │   ├── integration/          # PostgreSQL and Express API integration tests
-│       │   ├── setup/                # Shared Vitest/test-database setup and utilities
-│       │   └── unit/                 # Compatibility-scoring and AI-provider unit tests
+│       │   ├── integration/          # PostgreSQL and Express API tests
+│       │   ├── setup/                # Shared test database setup
+│       │   └── unit/                 # Compatibility and provider unit tests
 │       │
 │       ├── eslint.config.js          # Backend ESLint configuration
 │       ├── package.json              # Backend dependencies and npm scripts
@@ -193,9 +224,11 @@ The repository is organized so frontend, backend, infrastructure, project docume
 └── README.md                         # Project setup, architecture, workflows, and current status
 ```
 
-The backend `modules` directory follows the modular-monolith approach. Each domain module owns its controller, service, repository, routes, and related types rather than placing all controllers or repositories into application-wide folders.
+The backend uses a modular-monolith approach. Each domain module owns its controller, service, repository, routes, and related types rather than placing all controllers or repositories into application-wide folders.
 
-The Angular `pages` directory contains route-level screens, while reusable API and application-state logic is kept under `core`. Placeholder pages are intentionally limited to workflow areas that have not yet reached their feature branch.
+Housing Assignment follows the same structure. Its transactional repository handles reservation, assignment change, and cancellation operations. Separate repositories handle gender-compatible inventory filtering and the Student My Housing read model.
+
+The Angular `pages` directory contains route-level screens, while typed API clients and shared application logic are kept under `core`.
 
 ## Tech Stack
 
@@ -310,7 +343,7 @@ When the remote provider is selected, Campus Rental uses the configured OpenAI-c
 
 The course-provided DRIFT endpoint currently uses HTTP rather than HTTPS. This means credentials and profile text sent to that endpoint are not protected by TLS during transport. Campus Rental treats this as a limitation of the provided course service rather than adding unrelated infrastructure to the project.
 
-The AI provider receives only the About Me and Looking For text needed for semantic analysis. Gender, Student number, academic information, and the structured roommate preference values are not sent to the AI provider.
+The AI provider receives only the About Me and Looking For text needed for semantic analysis. Gender, Student number, academic information, and structured roommate preference values are not sent to the AI provider.
 
 ## Auth0 Configuration
 
@@ -386,6 +419,8 @@ A missing or invalid access token returns HTTP `401 Unauthorized`.
 
 A valid Auth0 identity that is not registered in the local Campus Rental `users` table returns HTTP `403 Forbidden`.
 
+The Housing Assignment APIs follow the same authorization process. Only Housing Officers can create, change, or cancel assignments. Students can retrieve their own assignments but cannot access Housing Officer assignment operations.
+
 ## Development Auth0 Users
 
 The development seed uses deterministic placeholder authentication subjects such as:
@@ -409,7 +444,9 @@ casey.nguyen@campusrental.test
 housing.officer@campusrental.test
 ```
 
-Alex Morgan and Jordan Lee are seeded as male Students. Taylor Brooks and Casey Nguyen are seeded as female Students. These accounts provide two same-gender Student pairs for manually verifying roommate eligibility and mutual roommate requests.
+Alex Morgan and Jordan Lee are seeded as male Students. Taylor Brooks and Casey Nguyen are seeded as female Students.
+
+These accounts provide predictable same-gender Student pairs for manually verifying roommate eligibility, mutual roommate requests, and housing placement rules.
 
 Keep demo passwords outside the repository.
 
@@ -709,7 +746,9 @@ AND the Bed does not have a RESERVED or CONFIRMED Housing Assignment
 
 `CANCELLED` and `SUPERSEDED` assignments do not keep a bed unavailable.
 
-This same derived availability behavior is used by the Housing Officer inventory view and the Student housing-options summary.
+This derived availability behavior is used by the Housing Officer inventory view, Student housing-options summary, and Housing Officer assignment workflow.
+
+During assignment selection, available inventory is also checked against the room gender occupancy policy. A bed can be physically available but ineligible for a particular Student if assigning that Student would violate the room policy.
 
 ### Student Housing Options
 
@@ -813,7 +852,9 @@ APPROVED
 
 The database also protects this rule with a partial unique index.
 
-Student and Housing Officer cancellation is allowed during the pre-assignment portion of the workflow. Simple cancellation is not used once an application reaches `HOUSING_ASSIGNED`, because later housing-assignment processing must maintain assignment consistency.
+Student and Housing Officer cancellation is allowed during the pre-assignment portion of the workflow.
+
+Once an application reaches `HOUSING_ASSIGNED`, cancellation must also account for the reserved Housing Assignment. The Housing Assignment workflow provides the appropriate transactional cancellation operations.
 
 Housing Officer-only notes and officer audit identifiers are intentionally omitted from Student application responses.
 
@@ -958,7 +999,257 @@ Viewing a recommendation does not create a roommate request. A Student must expl
 
 An accepted direct roommate request takes priority over AI-assisted recommendations for the same academic year.
 
-Roommate matching does not create a housing assignment. Final room and bed placement remains part of the later Housing Officer assignment workflow.
+Roommate matching does not automatically create a housing assignment. Final room and bed placement is performed by a Housing Officer through the Housing Assignments workflow.
+
+### Housing Officer Housing Assignments
+
+The Housing Assignment API is restricted to the `HOUSING_OFFICER` role.
+
+Retrieve assignment-ready applications and existing assignment records:
+
+```text
+GET /api/assignments
+```
+
+Retrieve available assignment options for an application:
+
+```text
+GET /api/assignments/applications/:applicationId/options
+```
+
+Create an individual Housing Assignment:
+
+```text
+POST /api/assignments
+```
+
+Example request:
+
+```json
+{
+  "applicationId": "10",
+  "bedId": "25"
+}
+```
+
+Create two Housing Assignments for an accepted roommate pair:
+
+```text
+POST /api/assignments/pair
+```
+
+Example request:
+
+```json
+{
+  "applicationId": "10",
+  "roommateApplicationId": "11",
+  "bedId": "25",
+  "roommateBedId": "26"
+}
+```
+
+Change an existing reserved Housing Assignment:
+
+```text
+POST /api/assignments/:assignmentId/change
+```
+
+Example request:
+
+```json
+{
+  "bedId": "30"
+}
+```
+
+Cancel only the reserved Housing Assignment:
+
+```text
+POST /api/assignments/:assignmentId/cancel-assignment
+```
+
+Cancel the reserved Housing Assignment and its related application:
+
+```text
+POST /api/assignments/:assignmentId/cancel
+```
+
+The assignment workflow requires an approved housing application.
+
+When an individual assignment succeeds:
+
+1. The backend verifies that the application is `APPROVED`.
+2. The selected Building, Room, and Bed must be active.
+3. The selected Bed must not already have an active assignment.
+4. The room gender occupancy policy must allow the placement.
+5. A `RESERVED` Housing Assignment is created.
+6. The application transitions to `HOUSING_ASSIGNED`.
+
+The reservation and application transition are completed within a PostgreSQL transaction.
+
+A roommate-pair assignment requires:
+
+- Two different approved housing applications.
+- The same academic year.
+- An accepted roommate request between the two Students.
+- Two different available beds within the same room.
+- Compliance with the room gender occupancy policy.
+
+Both reservations and both application updates occur in one transaction. If either assignment fails, neither assignment is committed.
+
+Assignment conflicts return HTTP `409 Conflict`.
+
+The backend and PostgreSQL enforce these rules independently of the Angular interface.
+
+### Assignment Changes and Cancellation
+
+An existing `RESERVED` Housing Assignment may be changed to another available bed.
+
+The change operation:
+
+1. Verifies that the assignment is still `RESERVED`.
+2. Verifies that the related application remains `HOUSING_ASSIGNED`.
+3. Checks the replacement Bed's availability and placement eligibility.
+4. Cancels the original assignment.
+5. Creates a replacement `RESERVED` assignment.
+6. Preserves the original assignment as history.
+
+These actions occur in one database transaction.
+
+The application remains `HOUSING_ASSIGNED` after a successful assignment change.
+
+The Housing Officer may also cancel a reservation without cancelling the application.
+
+Assignment-only cancellation:
+
+- Changes the reserved assignment to `CANCELLED`.
+- Releases the bed.
+- Returns the related application to `APPROVED`.
+- Allows the application to be assigned again.
+
+The backend prevents returning an application to `APPROVED` when doing so would violate the one-unsecured-application rule.
+
+Alternatively, the Housing Officer may cancel the entire application.
+
+Application cancellation:
+
+- Cancels the reserved assignment.
+- Releases the bed.
+- Changes the application to `CANCELLED`.
+- Preserves the associated records as history.
+
+If an unfinished local lease is in `PENDING` or `GENERATED` status, assignment change or cancellation also voids that lease.
+
+Assignments cannot be changed or cancelled through these operations after the related lease has been sent for signature. That situation must be handled through the later lease workflow.
+
+Confirmed assignments are also not modified through the reserved-assignment change and cancellation operations.
+
+### Room Gender Occupancy Policy
+
+Campus Rental enforces room gender compatibility during Housing Assignment operations.
+
+The current placement rules are:
+
+- `MALE` Students may share a room with other `MALE` Students.
+- `FEMALE` Students may share a room with other `FEMALE` Students.
+- `MALE` and `FEMALE` Students cannot be assigned into the same occupied room.
+- A Student with `UNSPECIFIED` gender may be assigned to an entirely unoccupied room.
+- Once a Student with `UNSPECIFIED` gender is assigned to a room, no additional Student may be assigned to that room.
+- Roommate-pair placement requires two gender-compatible Students.
+- `CANCELLED` and `SUPERSEDED` assignments do not count as active room occupancy.
+
+The Housing Officer assignment-options API marks incompatible rooms and beds as unavailable for the Student being reviewed.
+
+The Angular assignment screen only presents rooms that have eligible available beds.
+
+The final enforcement happens in PostgreSQL through the room gender policy trigger introduced in migration `0006`.
+
+The trigger checks `RESERVED` and `CONFIRMED` Housing Assignments and uses room-level locking to protect against competing assignment operations.
+
+This prevents two simultaneous requests from independently treating the same room as empty and creating incompatible occupancy.
+
+An incompatible assignment is rejected even when the request bypasses the Angular interface.
+
+The room gender occupancy policy is separate from AI roommate compatibility scoring. Gender is not used to calculate an AI compatibility percentage.
+
+### Student My Housing
+
+The Student Housing Assignment API is restricted to the `STUDENT` role.
+
+Retrieve the authenticated Student's Housing Assignments:
+
+```text
+GET /api/student/housing-assignments
+```
+
+This endpoint determines ownership from the authenticated local Student identity.
+
+Students cannot provide another Student's ID to retrieve that Student's housing history.
+
+The response includes:
+
+```text
+Assignment ID
+Application ID
+Academic year
+Assignment status
+Building name
+Room number
+Room style
+Bed label
+Reserved date
+Confirmed date
+Cancelled date
+Superseded date
+Room occupancy counts for active assignments
+Accepted roommates assigned to the same room
+```
+
+The Student My Housing screen separates active assignments from historical assignments.
+
+Active statuses:
+
+```text
+RESERVED
+CONFIRMED
+```
+
+Historical statuses:
+
+```text
+CANCELLED
+SUPERSEDED
+```
+
+For active assignments, the screen shows:
+
+```text
+Residence hall
+Room
+Bed
+Room style
+Academic year
+Assignment status
+Room occupancy
+Assigned accepted roommate information
+Important assignment dates
+Next-step information
+```
+
+Room occupancy displays the number of active beds in the room, the number with active reservations or confirmed assignments, and the remaining open beds.
+
+The occupied count includes all active room assignments, including unrelated occupants.
+
+However, identifying information is returned only for accepted roommates who are actually assigned to the same room.
+
+Students do not receive the names or other personal information of unrelated room occupants.
+
+Historical assignments remain visible, but current occupancy counts and roommate information are not attached to them. This prevents an old assignment from displaying the room's present-day occupancy.
+
+The screen also explains that a `RESERVED` assignment holds the bed but does not represent completed lease signing.
+
+Lease completion will transition the assignment to `CONFIRMED` during the later Lease Workflow feature.
 
 ## Health Check
 
@@ -1047,9 +1338,37 @@ The current domain migrations are:
 0002_create_housing_inventory.sql
 0003_create_housing_workflow.sql
 0004_create_roommate_matching.sql
+0005_allow_housing_assignment_reassignment.sql
+0006_enforce_housing_room_gender_policy.sql
 ```
 
-Together, these migrations create the current Campus Rental domain schema for users, student profiles, housing inventory, housing applications, assignments, leases, roommate profiles, and roommate requests.
+Migrations `0001` through `0004` establish the Campus Rental domain schema for users, Student Profiles, housing inventory, housing applications, assignments, leases, roommate profiles, and roommate requests.
+
+Migration `0005` changes the assignment/application uniqueness rule so that cancelled assignment records can be preserved while a replacement active assignment is created for the same application.
+
+Only one `RESERVED` or `CONFIRMED` assignment may be active for an application at a time.
+
+Migration `0006` adds the database trigger enforcing the room gender occupancy policy.
+
+The trigger applies to new or updated active assignments. Existing data should be reviewed for compatibility before applying this migration to a previously populated environment.
+
+### Docker Database Migrations
+
+When using the full Docker Compose environment, migration commands can be executed inside the running server container.
+
+From the repository root:
+
+```powershell
+docker compose --env-file .env -f ops/docker/docker-compose.yml exec server npm run db:status
+```
+
+Apply pending migrations:
+
+```powershell
+docker compose --env-file .env -f ops/docker/docker-compose.yml exec server npm run db:migrate
+```
+
+Migration execution does not require deleting the PostgreSQL volume or recreating the database.
 
 ## Backend Verification
 
@@ -1162,18 +1481,84 @@ The automated backend tests currently cover areas including:
 - Housing Officer application cancellation
 - Application approval and cancellation audit data
 - Student and Housing Officer application role authorization
+- Housing Assignment application and inventory retrieval
+- Individual reservation creation
+- Transactional application transition to `HOUSING_ASSIGNED`
+- Inactive inventory rejection
+- Competing assignments targeting the same bed
+- Accepted roommate-pair placement
+- Rejection of roommate-pair placement without mutual consent
+- Transaction rollback when either roommate bed is unavailable
+- Assignment cancellation and bed release
+- Preservation of cancelled assignment records
+- Reserved assignment changes and replacement reservations
+- Application return to `APPROVED` after assignment-only cancellation
+- One-unsecured-application protection during assignment cancellation
+- Unfinished lease voiding during assignment changes and cancellation
+- Rejection of assignment changes after lease submission
+- Housing Assignment Student and Housing Officer authorization
+- Gender-compatible inventory filtering
+- Rejection of mixed-gender occupancy
+- `UNSPECIFIED` room occupancy restrictions
+- Gender compatibility during roommate-pair placement
+- Gender compatibility during assignment changes
+- Concurrent different-gender assignment protection
+- Student housing roommate and occupancy information
+- Student privacy when unrelated occupants share a room
+- Historical assignment display without current occupancy information
 
-The authorization tests exercise real Express routes, role middleware, controllers, services, repositories, and the PostgreSQL database while replacing the external Auth0 authentication step with deterministic test identity data.
+### Housing Assignment Integration Tests
 
-Real Auth0 authentication is also verified manually during development using the Angular application and API.
+The Housing Assignment feature includes dedicated integration test files:
 
-The complete roommate workflow has also been manually verified through the Angular application using separate Student Auth0 identities. The manual workflow covers same-gender eligibility, direct request creation and cancellation, AI-assisted discovery, conversion of a recommendation into a pending request, mutual acceptance, accepted-request precedence, and confirmation that roommate matching does not automatically create a housing assignment.
+```text
+src/server/tests/integration/housing-assignment-api.test.ts
+src/server/tests/integration/housing-assignment-reassignment-api.test.ts
+src/server/tests/integration/housing-assignment-gender-policy-api.test.ts
+src/server/tests/integration/student-housing-api.test.ts
+```
+
+The tests exercise Express routes, controllers, services, repositories, and the PostgreSQL database.
+
+The external Auth0 authentication step is replaced with deterministic test identity data while the application's role authorization remains part of the API test path.
+
+The assignment tests verify important business rules rather than only checking successful CRUD operations.
+
+The concurrency tests issue competing assignment requests and verify that the database prevents conflicting active reservations.
+
+The gender-policy tests also verify that two competing assignment requests with different-gender Students cannot both reserve beds in the same initially empty room.
+
+### Manual Housing Assignment Verification
+
+Feature 08 has also been manually tested through the Angular application using the existing development Students and Housing Officer.
+
+The manual checks included:
+
+- Reviewing approved applications and their housing preferences
+- Reviewing accepted roommate information
+- Reserving an individual Student's room and bed
+- Reserving an accepted roommate pair
+- Reviewing active housing assignments
+- Changing a reserved assignment
+- Cancelling reservations and releasing beds
+- Returning an application to `APPROVED` after assignment-only cancellation
+- Reviewing assignment history
+- Confirming Student My Housing information
+- Displaying accepted roommates assigned to the same room
+- Displaying total, occupied, and open room bed counts
+- Highlighting rooms where an accepted roommate is already assigned
+- Hiding gender-incompatible rooms from Housing Officer selection
+- Confirming compatible empty rooms remain selectable
+
+The existing Alex Morgan, Jordan Lee, and Casey Nguyen demo identities were used to verify the room gender occupancy rules.
+
+Backend verification and Docker-based application testing were completed after the gender-policy changes were introduced.
 
 ## Continuous Integration
 
 The repository includes a GitHub Actions backend CI workflow that installs dependencies, runs ESLint, performs TypeScript type checking, executes the PostgreSQL integration test suite, and builds the backend.
 
-GitHub Actions are currently disabled on the university-hosted GitHub instance. The workflow is therefore validated locally using `act`, which runs the GitHub Actions workflow through Docker.
+GitHub Actions are currently disabled on the university-hosted GitHub instance. The workflow has therefore been validated locally using `act`, which runs the GitHub Actions workflow through Docker.
 
 From the repository root:
 
@@ -1303,11 +1688,15 @@ The seed creates fictional development records across the Campus Rental domain, 
 - Roommate profiles
 - Roommate requests
 
-The seeded roommate data includes Alex Morgan and Jordan Lee as male Students and Taylor Brooks and Casey Nguyen as female Students. This provides predictable same-gender eligibility data for development and demonstrations.
+The seeded roommate data includes Alex Morgan and Jordan Lee as male Students and Taylor Brooks and Casey Nguyen as female Students.
+
+This provides predictable same-gender eligibility data for development and demonstrations.
 
 The seed includes a pending Alex → Jordan roommate request and an accepted Taylor → Casey roommate request for the seeded academic year.
 
 The seed is designed to be repeatable. Running `npm run db:seed` again does not duplicate the predefined demo records.
+
+### Fresh Development Database
 
 To create a fresh development database from an empty Docker volume:
 
@@ -1324,6 +1713,8 @@ npm run db:seed
 ```
 
 After a fresh seed, map any Auth0 development identities to the appropriate local Campus Rental users before testing authenticated workflows.
+
+The seed provides the initial domain records. Additional application approval, roommate acceptance, and Housing Assignment actions can be completed through the Angular interface when demonstrating the full housing workflow.
 
 ## Current Angular Application Behavior
 
@@ -1413,6 +1804,8 @@ Students can cancel applications that remain in an eligible pre-assignment state
 
 When an application is approved, the Student can continue from the application page to the Roommates workflow.
 
+Once a Housing Officer reserves a bed, the application changes to `HOUSING_ASSIGNED`.
+
 Housing Officer internal notes are intentionally not displayed to Students.
 
 #### Roommates
@@ -1423,7 +1816,9 @@ Students who already know who they want to live with can search by Student name 
 
 Incoming requests can be accepted or declined. Pending outgoing requests can be cancelled. A roommate request does not become accepted until the requested Student explicitly agrees.
 
-Students may also create a Roommate Profile and opt into AI-assisted discovery. The profile includes:
+Students may also create a Roommate Profile and opt into AI-assisted discovery.
+
+The profile includes:
 
 ```text
 Sleep schedule
@@ -1468,14 +1863,40 @@ Selecting `Send Roommate Request` converts the Student's decision into the same 
 
 Once an accepted direct roommate request exists for an academic year, that request takes priority and normal AI-assisted discovery is no longer offered for that housing cycle.
 
-#### Student Placeholder Routes
+#### My Housing
 
-The following Student workflow areas remain placeholders until their planned feature branches are implemented:
+The My Housing screen displays a Student's current reserved or confirmed housing assignments and previous assignment history.
+
+Active assignments display:
 
 ```text
-My Housing
-My Lease
+Building
+Room
+Bed
+Room style
+Academic year
+Assignment status
+Room occupancy
+Accepted roommates assigned to the same room
+Reservation date
+Confirmation date, when available
 ```
+
+The occupancy summary shows the number of occupied and open beds in the room.
+
+Accepted roommates assigned to the same room are identified by name and bed label.
+
+Unrelated room occupants are counted but are not identified.
+
+Historical cancelled and superseded assignments remain visible in a separate section without showing current room occupancy information.
+
+For a reserved assignment, the page explains that the bed is held and that lease completion is the next step.
+
+#### My Lease
+
+The My Lease screen remains a placeholder until the Lease Workflow feature is implemented.
+
+The planned workflow will allow Students to review a generated lease, complete electronic signature, and receive confirmation of their final housing assignment.
 
 ### Housing Officer Navigation
 
@@ -1524,17 +1945,54 @@ Cancel eligible pre-assignment applications
 
 Housing Officer notes remain private and are not exposed through Student APIs or Student pages.
 
-#### Housing Officer Placeholder Routes
+#### Assignments
 
-The following Housing Officer workflow area remains a placeholder until its planned feature branch is implemented:
+The Housing Assignments screen allows Housing Officers to review approved applications and reserve available rooms and beds.
+
+The page displays assignment-related summary counts, approved applications, active assignments, and assignment history.
+
+When reviewing an application, the Housing Officer can see:
 
 ```text
-Assignments
+Student identity and academic information
+Academic year
+Preferred residence hall
+Preferred room style
+Accepted roommate information
+Existing roommate assignment information
+Current Housing Assignment, when applicable
+Available compatible inventory
 ```
 
-## Housing Application Workflow
+The Housing Officer may choose an individual assignment or an eligible roommate-pair assignment.
 
-The application lifecycle is:
+For roommate-pair placement, both Students must have approved applications and an accepted roommate request.
+
+The interface requires two different available beds in the same room.
+
+Preferred inventory is displayed first, but the Housing Officer may select other compatible inventory when necessary.
+
+Rooms that are incompatible with the Student's gender occupancy rules are not offered as selectable options.
+
+If an accepted roommate has already been assigned, the officer can review that assignment information. When the assigned roommate's room is available as a placement option, it is highlighted in the inventory list.
+
+The Housing Officer can also:
+
+```text
+Change a reserved assignment
+Cancel only a reserved assignment
+Cancel the related application and reservation
+Refresh available inventory
+Review historical assignment records
+```
+
+Confirmation prompts are provided before important operations such as creating, changing, or cancelling reservations.
+
+The backend remains responsible for final validation. If inventory changes or another Housing Officer reserves a selected bed first, the API rejects the conflicting request and the Angular interface displays the error.
+
+## Housing Application and Assignment Workflow
+
+The complete planned application lifecycle is:
 
 ```text
 DRAFT
@@ -1548,9 +2006,9 @@ HOUSING_ASSIGNED
 COMPLETED
 ```
 
-`CANCELLED` is available where appropriate before the later assignment and completion workflows take control.
+`CANCELLED` is an exit state where appropriate.
 
-The currently implemented housing-application workflow covers:
+The currently implemented workflow covers:
 
 ```text
 Student creates a DRAFT application
@@ -1570,31 +2028,82 @@ Housing Officer approves the application
 Application becomes APPROVED
         ↓
 Student can review roommate options
+        ↓
+Student may send or accept a roommate request
+        ↓
+Housing Officer reviews application and roommate information
+        ↓
+Housing Officer selects compatible available inventory
+        ↓
+Backend creates RESERVED Housing Assignment
+        ↓
+Application becomes HOUSING_ASSIGNED
 ```
 
-The Roommates workflow operates alongside the approved housing application and establishes roommate consent without changing the application to `HOUSING_ASSIGNED`.
+A Housing Officer may reserve a Student individually or reserve two beds for an eligible accepted roommate pair.
 
-The later `HOUSING_ASSIGNED` and `COMPLETED` transitions belong to the housing-assignment and lease feature branches rather than being simulated in the current application workflow.
+Housing Assignment statuses include:
+
+```text
+RESERVED
+CONFIRMED
+CANCELLED
+SUPERSEDED
+```
+
+The current Housing Assignment feature creates `RESERVED` assignments.
+
+A reserved assignment holds the bed and makes it unavailable for other assignments.
+
+An active reservation can be changed or cancelled through the Housing Officer workflow, subject to the existing business rules.
+
+Cancelled assignments remain part of the Student's housing history.
+
+The `CONFIRMED` transition is reserved for successful lease completion.
+
+The `SUPERSEDED` status supports room-change history when a later confirmed assignment replaces a previous confirmed placement.
+
+The Lease Workflow feature will complete the final transition:
+
+```text
+HOUSING_ASSIGNED
+        ↓
+Lease generated
+        ↓
+Lease sent for electronic signature
+        ↓
+Student signs lease
+        ↓
+Trusted signature confirmation received
+        ↓
+Assignment becomes CONFIRMED
+        ↓
+Application becomes COMPLETED
+```
+
+The final signature completion process will be transactional so the Lease, Housing Assignment, and Housing Application remain consistent.
 
 ## Planned Campus Rental Features
 
 The current implementation roadmap includes:
 
-0. Backend and Docker foundation
-1. Database foundation
-2. Campus Rental domain schema
-3. Angular frontend foundation
-4. Authentication, role-based authorization, and Student Profile
-5. Housing inventory management
-6. Housing applications and housing preferences
-7. Direct roommate requests and AI-assisted roommate matching
-8. Housing Officer room and bed assignment
-9. Lease generation and electronic signature
-10. End-to-end testing and hardening
-11. CI/CD and observability
-12. Final project documentation and presentation preparation
+0. Backend and Docker foundation — Implemented
+1. Database foundation — Implemented
+2. Campus Rental domain schema — Implemented
+3. Angular frontend foundation — Implemented
+4. Authentication, role-based authorization, and Student Profile — Implemented
+5. Housing inventory management — Implemented
+6. Housing applications and housing preferences — Implemented
+7. Direct roommate requests and AI-assisted roommate matching — Implemented
+8. Housing Officer room and bed assignment — Implemented
+9. Lease generation and electronic signature — Planned
+10. End-to-end testing and hardening — Planned
+11. CI/CD and observability improvements — Planned
+12. Final project documentation and presentation preparation — Planned
 
-Features 0 through 7 are currently represented in the implementation.
+Features 0 through 8 are represented in the implementation.
+
+Feature 09 will focus on lease generation, electronic signature integration, and completion of the housing application and assignment lifecycle.
 
 The roadmap is a working plan and may be adjusted as implementation reveals better sequencing or technical needs.
 
@@ -1646,7 +2155,27 @@ Accepted direct roommate requests take priority over AI-assisted discovery for t
 
 The AI compatibility provider is isolated behind a provider abstraction. The implementation supports a deterministic mock provider, a generic remote OpenAI-compatible provider, and deterministic fallback behavior when the remote provider is unavailable.
 
-DocuSign will follow a similar provider-abstraction pattern during the later lease-workflow branch so the external integration does not become tightly coupled to the Campus Rental domain model.
+Housing Assignment uses PostgreSQL transactions to ensure reservations and application state changes are completed together.
+
+PostgreSQL partial unique indexes prevent the same bed from having multiple active assignments and prevent one application from having multiple active assignments at the same time.
+
+Historical assignment records are preserved. Cancelled and superseded assignments do not continue blocking bed availability.
+
+Changing a reserved assignment creates a replacement reservation rather than overwriting the previous assignment's historical record.
+
+Cancelling only an assignment returns the application to `APPROVED` when permitted. Cancelling the application also cancels its active reserved assignment and releases the bed.
+
+The Housing Assignment workflow preserves existing lease boundaries. Unfinished local leases can be voided during reservation changes or cancellations, while leases already sent for signature require the later lease workflow.
+
+Housing Officer assignment selection considers Student preferences and available inventory, but preferences are not guarantees.
+
+The room gender occupancy policy is enforced by PostgreSQL and used to filter Housing Officer assignment options. `MALE` and `FEMALE` Students cannot share an occupied room with a different gender. Students with `UNSPECIFIED` gender can only be placed into otherwise unoccupied rooms that remain unshared.
+
+Room gender compatibility is a deterministic housing placement rule, not an AI scoring factor.
+
+Student My Housing uses the authenticated identity to retrieve assignment information. Accepted roommates assigned to the same room may be identified, while unrelated occupants are represented only through occupancy counts.
+
+DocuSign will follow a provider-abstraction pattern during the later Lease Workflow feature so the external integration does not become tightly coupled to the Campus Rental domain model.
 
 ## AI Use
 
@@ -1654,7 +2183,9 @@ Generative AI is being used during development to assist with planning, design d
 
 AI-generated suggestions are reviewed before being incorporated into the project. Generated code and design recommendations may be modified, rejected, or replaced when they do not fit the project requirements or established architecture.
 
-The AI-assisted roommate matching feature implemented in Campus Rental is separate from the use of generative AI as a software-development tool. The application feature uses an explicit provider abstraction, deterministic structured scoring, constrained semantic analysis, privacy safeguards, and fallback behavior so the housing workflow does not depend entirely on a generative AI response.
+The AI-assisted roommate matching feature implemented in Campus Rental is separate from the use of generative AI as a software-development tool.
+
+The application feature uses an explicit provider abstraction, deterministic structured scoring, constrained semantic analysis, privacy safeguards, and fallback behavior so the housing workflow does not depend entirely on a generative AI response.
 
 ---
 
