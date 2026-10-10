@@ -142,6 +142,25 @@ implements OnInit {
     );
   }
 
+  protected academicYearChanged():
+  void {
+    this.recommendations.set(
+      [],
+    );
+
+    this.hasLoadedRecommendations.set(
+      false,
+    );
+
+    this.error.set(
+      null,
+    );
+
+    this.message.set(
+      null,
+    );
+  }
+
   protected loadRecommendations():
   void {
     this.error.set(
@@ -171,24 +190,35 @@ implements OnInit {
       return;
     }
 
+    const academicYear =
+      this.academicYearControl
+        .value;
+
     this.loadingRecommendations.set(
       true,
     );
 
     this.roommateApi
       .getRecommendations(
-        this.academicYearControl
-          .value,
+        academicYear,
       )
       .subscribe({
         next:
           (response) => {
-            this.recommendations.set(
-              response.recommendations,
-            );
-
             this.loadingRecommendations.set(
               false,
+            );
+
+            if (
+              this.academicYearControl
+                .value
+              !== academicYear
+            ) {
+              return;
+            }
+
+            this.recommendations.set(
+              response.recommendations,
             );
 
             this.hasLoadedRecommendations.set(
@@ -204,6 +234,14 @@ implements OnInit {
             this.loadingRecommendations.set(
               false,
             );
+
+            if (
+              this.academicYearControl
+                .value
+              !== academicYear
+            ) {
+              return;
+            }
 
             this.hasLoadedRecommendations.set(
               true,
