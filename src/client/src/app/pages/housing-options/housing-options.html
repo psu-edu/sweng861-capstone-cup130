@@ -4,11 +4,11 @@
       Student Housing
     </p>
 
-    <h1>Housing Options</h1>
+    <h1>Housing Preferences</h1>
 
     <p>
-      Review active residence halls and current
-      availability by room style.
+      Choose a preferred residence hall and room
+      style for your housing application.
     </p>
   </header>
 
@@ -25,118 +25,442 @@
     </p>
   </div>
 
+  @if (message()) {
+    <div
+      class="page-message success-message"
+      role="status"
+    >
+      {{ message() }}
+
+      @if (preferencesLocked()) {
+        <a routerLink="/application">
+          View My Application
+        </a>
+      }
+    </div>
+  }
+
+  @if (
+    error()
+    && !confirmationOpen()
+  ) {
+    <div
+      class="page-message error-message"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  }
+
   @if (loading()) {
     <div class="card">
-      <p>Loading housing options...</p>
+      <p>Loading housing preferences...</p>
     </div>
-  } @else if (error()) {
+  } @else if (loadError()) {
     <div class="card">
-      <div class="error-message">
-        {{ error() }}
+      <div
+        class="page-message error-message"
+        role="alert"
+      >
+        {{ loadError() }}
       </div>
     </div>
-  } @else if (buildings().length === 0) {
-    <div class="card empty-state">
-      <h2>No housing options available</h2>
-
-      <p>
-        There are currently no active residence
-        halls available to review.
-      </p>
-    </div>
   } @else {
-    <div class="building-grid">
-      @for (
-        building of buildings();
-        track building.id
-      ) {
-        <article class="building-card">
-          <header class="building-header">
-            <div>
-              <h2>{{ building.name }}</h2>
+    @if (
+      activeApplication();
+      as application
+    ) {
+      <div
+        class="application-status-card"
+        [attr.data-status]="application.status"
+      >
+        <div>
+          <strong>
+            Current Application:
+            {{ statusLabel(application) }}
+          </strong>
 
-              <p class="address">
-                {{ building.address }}
-              </p>
-            </div>
-
-            <div
-              class="availability-summary"
-              [class.no-availability]="
-                building.availableBeds === 0
-              "
-            >
-              <strong>
-                {{ building.availableBeds }}
-              </strong>
-
-              <span>
-                of {{ building.totalBeds }}
-                spaces available
-              </span>
-            </div>
-          </header>
-
-          @if (building.description) {
-            <p class="description">
-              {{ building.description }}
+          @if (
+            application.status === 'DRAFT'
+          ) {
+            <p>
+              Your preferences are saved as a
+              draft. You can continue editing
+              them until you submit the
+              application.
+            </p>
+          } @else {
+            <p>
+              These preferences have already been
+              submitted and can no longer be
+              edited.
             </p>
           }
+        </div>
 
-          <div class="room-styles">
-            <h3>Room Style Availability</h3>
+        <a
+          class="text-link"
+          routerLink="/application"
+        >
+          My Application
+        </a>
+      </div>
+    }
 
-            @if (
-              building.roomStyles.length === 0
-            ) {
-              <p class="empty-styles">
-                No active room inventory is
-                currently configured for this hall.
+    <section class="preference-card">
+      <div class="form-field academic-year-field">
+        <label for="academicYear">
+          Academic Year
+        </label>
+
+        <select
+          id="academicYear"
+          [formControl]="academicYearControl"
+          [disabled]="preferencesLocked()"
+        >
+          <option value="">
+            Select academic year
+          </option>
+
+          @for (
+            academicYear of academicYears;
+            track academicYear
+          ) {
+            <option [value]="academicYear">
+              {{ academicYear }}
+            </option>
+          }
+        </select>
+
+        @if (
+          academicYearControl.touched
+          && academicYearControl.invalid
+        ) {
+          <span class="field-error">
+            Select an academic year.
+          </span>
+        }
+      </div>
+
+      <p class="selection-help">
+        Select one room style from your preferred
+        residence hall. Current availability is
+        shown for reference, but preferences do
+        not reserve a space.
+      </p>
+    </section>
+
+    @if (buildings().length === 0) {
+      <div class="card empty-state">
+        <h2>No housing options available</h2>
+
+        <p>
+          There are currently no active residence
+          halls available to review.
+        </p>
+      </div>
+    } @else {
+      <div class="building-grid">
+        @for (
+          building of buildings();
+          track building.id
+        ) {
+          <article
+            class="building-card"
+            [class.selected-building]="
+              selectedBuildingId()
+                === building.id
+            "
+          >
+            <header class="building-header">
+              <div>
+                <h2>{{ building.name }}</h2>
+
+                <p class="address">
+                  {{ building.address }}
+                </p>
+              </div>
+
+              <div
+                class="availability-summary"
+                [class.no-availability]="
+                  building.availableBeds === 0
+                "
+              >
+                <strong>
+                  {{ building.availableBeds }}
+                </strong>
+
+                <span>
+                  of {{ building.totalBeds }}
+                  spaces available
+                </span>
+              </div>
+            </header>
+
+            @if (building.description) {
+              <p class="description">
+                {{ building.description }}
               </p>
             }
 
-            @for (
-              roomStyle of building.roomStyles;
-              track roomStyle.roomStyle
-            ) {
-              <div class="room-style-row">
-                <div>
-                  <strong>
-                    {{
-                      roomStyleLabel(
-                        roomStyle.roomStyle
-                      )
-                    }}
-                  </strong>
+            <div class="room-styles">
+              <h3>Room Style Availability</h3>
 
-                  <span class="capacity">
-                    {{
-                      roomStyle.totalBeds
-                    }}
-                    total
-                  </span>
-                </div>
+              @if (
+                building.roomStyles.length === 0
+              ) {
+                <p class="empty-styles">
+                  No active room inventory is
+                  currently configured for this
+                  hall.
+                </p>
+              }
 
-                <span
-                  class="availability-badge"
-                  [class.available]="
-                    roomStyle.availableBeds > 0
-                  "
-                  [class.unavailable]="
-                    roomStyle.availableBeds === 0
+              @for (
+                roomStyle of building.roomStyles;
+                track roomStyle.roomStyle
+              ) {
+                <div
+                  class="room-style-row"
+                  [class.selected-row]="
+                    isSelected(
+                      building.id,
+                      roomStyle.roomStyle
+                    )
                   "
                 >
-                  {{
-                    availabilityLabel(
-                      roomStyle.availableBeds
+                  <div class="room-style-details">
+                    <strong>
+                      {{
+                        roomStyleLabel(
+                          roomStyle.roomStyle
+                        )
+                      }}
+                    </strong>
+
+                    <span class="capacity">
+                      {{ roomStyle.totalBeds }}
+                      total
+                    </span>
+
+                    <span
+                      class="availability-badge"
+                      [class.available]="
+                        roomStyle.availableBeds > 0
+                      "
+                      [class.unavailable]="
+                        roomStyle.availableBeds === 0
+                      "
+                    >
+                      {{
+                        availabilityLabel(
+                          roomStyle.availableBeds
+                        )
+                      }}
+                    </span>
+                  </div>
+
+                  @if (!preferencesLocked()) {
+                    <button
+                      type="button"
+                      class="select-button"
+                      [class.selected]="
+                        isSelected(
+                          building.id,
+                          roomStyle.roomStyle
+                        )
+                      "
+                      [attr.aria-pressed]="
+                        isSelected(
+                          building.id,
+                          roomStyle.roomStyle
+                        )
+                      "
+                      [disabled]="
+                        saving()
+                        || submitting()
+                      "
+                      (click)="
+                        selectRoomStyle(
+                          building.id,
+                          roomStyle.roomStyle
+                        )
+                      "
+                    >
+                      {{
+                        isSelected(
+                          building.id,
+                          roomStyle.roomStyle
+                        )
+                          ? 'Selected'
+                          : 'Select'
+                      }}
+                    </button>
+                  } @else if (
+                    isSelected(
+                      building.id,
+                      roomStyle.roomStyle
                     )
-                  }}
-                </span>
-              </div>
-            }
+                  ) {
+                    <span class="selection-badge">
+                      Current Preference
+                    </span>
+                  }
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+
+    @if (!preferencesLocked()) {
+      <div class="preference-actions">
+        @if (
+          activeApplication()?.status
+            === 'DRAFT'
+        ) {
+          <span class="draft-note">
+            Saving will update your existing
+            draft.
+          </span>
+        }
+
+        <button
+          type="button"
+          class="primary-button"
+          [disabled]="
+            saving()
+            || submitting()
+            || academicYearControl.invalid
+            || selectedBuildingId() === null
+            || selectedRoomStyle() === null
+          "
+          (click)="savePreferences()"
+        >
+          {{
+            saving()
+              ? 'Saving...'
+              : 'Save Preferences & Review'
+          }}
+        </button>
+      </div>
+    }
+  }
+
+  @if (
+    confirmationOpen()
+    && activeApplication();
+    as application
+  ) {
+    <div class="modal-backdrop">
+      <section
+        class="confirmation-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirmationTitle"
+      >
+        <p class="eyebrow">
+          Confirm Housing Preferences
+        </p>
+
+        <h2 id="confirmationTitle">
+          Review Before Submitting
+        </h2>
+
+        <p class="confirmation-intro">
+          Check your selections before submitting
+          them to the Housing Office.
+        </p>
+
+        <dl class="confirmation-details">
+          <div>
+            <dt>Residence Hall</dt>
+
+            <dd>
+              {{
+                selectedBuilding()?.name
+                ?? application
+                  .preferredBuildingName
+              }}
+            </dd>
           </div>
-        </article>
-      }
+
+          <div>
+            <dt>Room Style</dt>
+
+            <dd>
+              {{
+                roomStyleLabel(
+                  application
+                    .preferredRoomStyle
+                )
+              }}
+            </dd>
+          </div>
+
+          <div>
+            <dt>Academic Year</dt>
+
+            <dd>
+              {{ application.academicYear }}
+            </dd>
+          </div>
+
+          <div>
+            <dt>Roommate Option</dt>
+
+            <dd>
+              Not selected yet
+
+              <span class="detail-note">
+                Roommate options are completed
+                in the Roommates step.
+              </span>
+            </dd>
+          </div>
+        </dl>
+
+        <div class="confirmation-warning">
+          These are preferences, not guaranteed
+          inventory. The Housing Office will make
+          the final room and bed assignment.
+        </div>
+
+        @if (error()) {
+          <div
+            class="page-message error-message"
+            role="alert"
+          >
+            {{ error() }}
+          </div>
+        }
+
+        <div class="dialog-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="submitting()"
+            (click)="closeConfirmation()"
+          >
+            Back to Preferences
+          </button>
+
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="submitting()"
+            (click)="submitPreferences()"
+          >
+            {{
+              submitting()
+                ? 'Submitting...'
+                : 'Submit Preferences'
+            }}
+          </button>
+        </div>
+      </section>
     </div>
   }
 </section>

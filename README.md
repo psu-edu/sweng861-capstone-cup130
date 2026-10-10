@@ -8,17 +8,17 @@
 
 Campus Rental is a full-stack university housing application being developed for the SWENG 861 Course Capstone Project.
 
-The application is designed around two primary users: Students and Housing Officers. Students will be able to manage a housing application, submit residence hall and room-style preferences, request a known roommate or participate in AI-assisted roommate matching, receive a housing assignment, and complete the lease-signing process.
+The application is designed around two primary users: Students and Housing Officers. Students can manage a housing application, submit residence hall and room-style preferences, and track the status of their application. Future workflow steps will allow Students to request a known roommate or participate in AI-assisted roommate matching, receive a housing assignment, and complete the lease-signing process.
 
-Housing Officers manage residence hall inventory, review student applications, consider housing preferences and roommate information, make final room and bed assignments, and manage the leasing workflow.
+Housing Officers manage residence hall inventory, review student applications and housing preferences, maintain private application notes, approve applications, and will eventually use roommate information to make final room and bed assignments and manage the leasing workflow.
 
-Students will not directly claim a specific room or bed. Instead, they will submit housing preferences and Housing Officers will make the final assignment based on available inventory and roommate information. Database constraints and backend transactions will protect the assignment process from conflicting bed reservations.
+Students do not directly claim a specific room or bed. Instead, they submit housing preferences and Housing Officers make the final assignment based on available inventory and roommate information. Database constraints and backend transactions protect the assignment process from conflicting bed reservations.
 
 AI-assisted roommate matching is also part of the planned capstone functionality. The AI feature will provide explainable roommate recommendations but will not automatically pair students or make housing assignments.
 
 ## Project Status
 
-The project currently includes the backend, database, Angular frontend, authentication and authorization foundation, Student Profile workflow, and housing inventory management.
+The project currently includes the backend, database, Angular frontend, authentication and authorization foundation, Student Profile workflow, housing inventory management, and the housing application and preference workflow.
 
 Currently implemented:
 
@@ -65,60 +65,113 @@ Currently implemented:
 - Derived bed availability based on inventory state and active housing assignments
 - Student-facing residence hall and room-style availability API
 - Student housing-options view with general availability by hall and room style
-- Validation and user-friendly inventory API errors
+- Student housing preference selection by academic year, residence hall, and room style
+- Student housing application draft creation and editing
+- Housing application submission and status tracking
+- Student application cancellation before housing assignment
+- Housing Officer application list and review workflow
+- Housing Officer-only internal application notes
+- Housing Officer application approval and cancellation
+- Application approval and cancellation audit information
+- Academic-year selection and backend validation
+- Backend enforcement of housing application lifecycle rules
+- Protection against multiple unsecured housing applications for the same Student
+- Student API responses that exclude Housing Officer-only notes and audit information
+- Validation and user-friendly application and inventory API errors
 - Backend integration testing with Vitest and PostgreSQL
 - Supertest API integration testing
 - Consolidated backend and frontend verification commands
 
-Housing application submission and preference saving, roommate matching, final housing assignment, lease processing, and the remaining end-to-end workflow are planned for later feature branches.
+Direct roommate requests, AI-assisted roommate matching, final housing assignment, lease processing, and the remaining end-to-end workflow are planned for later feature branches.
 
 ## Repository Structure
 
+The repository is organized so frontend, backend, infrastructure, project documentation, and automated tests remain clearly separated.
+
 ```text
 /
-├── docs/                       # Architecture and project documentation
+├── .github/
+│   └── workflows/                    # GitHub Actions CI workflow definitions
+│
+├── docs/                             # Capstone planning, architecture, UI, and roadmap documents
+│
+├── ops/                              # Operational and deployment-related configuration
+│   └── docker/                       # Dockerfiles and Docker Compose configuration
+│
 ├── src/
-│   ├── client/                 # Angular frontend
+│   ├── client/                       # Angular frontend application
+│   │   ├── public/                   # Static frontend assets
+│   │   │
 │   │   ├── src/
 │   │   │   ├── app/
-│   │   │   │   ├── core/      # Shared config and frontend services
-│   │   │   │   ├── layout/    # Shared authenticated application shell
-│   │   │   │   └── pages/
-│   │   │   │       ├── housing-inventory/
-│   │   │   │       ├── housing-options/
-│   │   │   │       └── student-profile/
-│   │   │   └── styles.css     # Global styles and design tokens
-│   │   ├── angular.json
-│   │   ├── eslint.config.js
-│   │   ├── package.json
-│   │   ├── proxy.conf.json             # Local Angular API proxy
-│   │   └── proxy.conf.docker.json      # Docker Compose API proxy
-│   └── server/                 # Node.js / Express backend
+│   │   │   │   ├── core/            # Frontend configuration and shared application services
+│   │   │   │   │   ├── config/      # Auth0 and other shared frontend configuration
+│   │   │   │   │   └── services/    # Typed API clients and shared user/application services
+│   │   │   │   │
+│   │   │   │   ├── layout/          # Shared authenticated application layout
+│   │   │   │   │   └── app-shell/   # Navigation, user information, logout, and page shell
+│   │   │   │   │
+│   │   │   │   ├── pages/           # Route-level Angular screens
+│   │   │   │   │   ├── dashboard/              # Role-aware Student and Housing Officer dashboard
+│   │   │   │   │   ├── housing-applications/   # Housing Officer application review and approval
+│   │   │   │   │   ├── housing-inventory/      # Building → Room → Bed inventory administration
+│   │   │   │   │   ├── housing-options/        # Student housing availability and preference selection
+│   │   │   │   │   ├── login/                  # Public login and Auth0 entry page
+│   │   │   │   │   ├── placeholder/            # Temporary screens for future roadmap features
+│   │   │   │   │   ├── student-application/    # Student application status and lifecycle view
+│   │   │   │   │   └── student-profile/        # Student Profile view and editing
+│   │   │   │   │
+│   │   │   │   ├── app.config.ts    # Angular application providers and Auth0 setup
+│   │   │   │   ├── app.routes.ts    # Application route definitions
+│   │   │   │   └── app.ts           # Angular root component
+│   │   │   │
+│   │   │   └── styles.css            # Global styles and Campus Rental design tokens
+│   │   │
+│   │   ├── angular.json              # Angular workspace and build configuration
+│   │   ├── eslint.config.js          # Frontend ESLint configuration
+│   │   ├── package.json              # Frontend dependencies and npm scripts
+│   │   ├── proxy.conf.json           # Local Angular-to-Express development proxy
+│   │   ├── proxy.conf.docker.json    # Docker Compose Angular-to-Express proxy
+│   │   ├── tsconfig.app.json         # Angular application TypeScript configuration
+│   │   ├── tsconfig.json             # Shared frontend TypeScript configuration
+│   │   └── tsconfig.spec.json        # Frontend test TypeScript configuration
+│   │
+│   └── server/                       # Node.js / Express backend application
 │       ├── src/
-│       │   ├── auth/           # Authentication and RBAC
-│       │   ├── config/
-│       │   ├── db/
-│       │   │   ├── migrations/
-│       │   │   └── seeds/
-│       │   ├── modules/
-│       │   │   ├── housing-inventory/
-│       │   │   └── student-profile/
-│       │   ├── app.ts
-│       │   └── server.ts
+│       │   ├── auth/                 # Auth0 JWT validation, local identity resolution, and RBAC
+│       │   │
+│       │   ├── config/               # Environment-variable loading and validation
+│       │   │
+│       │   ├── db/                   # PostgreSQL connection, migration, and seed infrastructure
+│       │   │   ├── migrations/       # Versioned immutable SQL schema migrations
+│       │   │   └── seeds/            # Deterministic development/demo seed definitions
+│       │   │
+│       │   ├── modules/              # Domain-focused backend modules
+│       │   │   ├── housing-application/  # Application lifecycle, preferences, approval, and notes
+│       │   │   ├── housing-inventory/    # Building, Room, Bed, availability, and housing options
+│       │   │   └── student-profile/      # Student Profile retrieval and editing
+│       │   │
+│       │   ├── app.ts                # Express application and route registration
+│       │   └── server.ts             # Server startup and database connectivity check
+│       │
 │       ├── tests/
-│       │   ├── integration/
-│       │   └── setup/
-│       ├── eslint.config.js
-│       ├── package.json
-│       ├── tsconfig.json
-│       └── vitest.config.ts
-├── ops/
-│   └── docker/
-├── .env.example
-├── .dockerignore
-├── .gitignore
-└── README.md
+│       │   ├── integration/          # PostgreSQL and Express API integration tests
+│       │   └── setup/                # Shared Vitest/test-database setup and utilities
+│       │
+│       ├── eslint.config.js          # Backend ESLint configuration
+│       ├── package.json              # Backend dependencies and npm scripts
+│       ├── tsconfig.json             # Backend TypeScript configuration
+│       └── vitest.config.ts          # Backend Vitest configuration
+│
+├── .dockerignore                     # Files excluded from Docker build contexts
+├── .env.example                      # Template for required local environment variables
+├── .gitignore                        # Files excluded from Git source control
+└── README.md                         # Project setup, architecture, workflows, and current status
 ```
+
+The backend `modules` directory follows the modular-monolith approach. Each domain module owns its controller, service, repository, routes, and related types rather than placing all controllers or repositories into application-wide folders.
+
+The Angular `pages` directory contains route-level screens, while reusable API and application-state logic is kept under `core`. Placeholder pages are intentionally limited to workflow areas that have not yet reached their feature branch.
 
 ## Tech Stack
 
@@ -481,13 +534,13 @@ The Auth0 subject is used internally for identity resolution and is not returned
 
 The Student Profile API is restricted to the `STUDENT` role.
 
-Retrieve the authenticated student's profile:
+Retrieve the authenticated Student's profile:
 
 ```text
 GET /api/student/profile
 ```
 
-Update the authenticated student's profile:
+Update the authenticated Student's profile:
 
 ```text
 PUT /api/student/profile
@@ -506,7 +559,7 @@ Anticipated graduation semester
 Anticipated graduation year
 ```
 
-The backend determines profile ownership from the authenticated Campus Rental user. A client-supplied `userId` is not used to choose which student profile is updated.
+The backend determines profile ownership from the authenticated Campus Rental user. A client-supplied `userId` is not used to choose which Student Profile is updated.
 
 A Housing Officer attempting to access the Student Profile API receives HTTP `403 Forbidden`.
 
@@ -613,9 +666,147 @@ Available beds by room style
 
 The Student response does not expose room numbers or bed labels.
 
-The current Housing Preferences route uses this endpoint as a read-only housing-options view. Students can review residence halls and room-style availability, but preference submission is intentionally deferred to the housing application/preferences feature.
+The Housing Preferences screen uses this endpoint to display general availability while allowing the Student to choose a preferred residence hall and room style.
 
-Students do not claim a specific room or bed from this screen.
+Availability is informational. Selecting a preference does not reserve a bed or guarantee a placement.
+
+Students do not select an exact room or bed from this screen.
+
+### Student Housing Applications
+
+The Student housing application API is restricted to the `STUDENT` role and operates on the currently authenticated Student.
+
+Retrieve the Student's housing applications:
+
+```text
+GET /api/student/applications
+```
+
+Create a new draft application:
+
+```text
+POST /api/student/applications
+```
+
+Update an existing draft application:
+
+```text
+PUT /api/student/applications/:applicationId
+```
+
+Submit a draft application:
+
+```text
+POST /api/student/applications/:applicationId/submit
+```
+
+Cancel an eligible application:
+
+```text
+POST /api/student/applications/:applicationId/cancel
+```
+
+A housing application contains the Student's:
+
+```text
+Academic year
+Preferred residence hall
+Preferred room style
+Application status
+Lifecycle timestamps
+```
+
+Supported application statuses are:
+
+```text
+DRAFT
+SUBMITTED
+APPROVED
+HOUSING_ASSIGNED
+COMPLETED
+CANCELLED
+```
+
+Students can modify their housing preferences while the application remains in `DRAFT`.
+
+After the application is submitted, the housing preferences become read-only. A Housing Officer reviews the submitted application and can move it to `APPROVED`.
+
+The current academic-year selector provides the current academic year and the next two academic years. The backend independently validates the submitted academic year so the Angular interface is not the only enforcement point.
+
+A Student may have only one unsecured application at a time. Applications in the following states block creation of another unsecured application:
+
+```text
+DRAFT
+SUBMITTED
+APPROVED
+```
+
+The database also protects this rule with a partial unique index.
+
+Student and Housing Officer cancellation is allowed during the pre-assignment portion of the workflow. Simple cancellation is not used once an application reaches `HOUSING_ASSIGNED`, because later housing-assignment processing must maintain assignment consistency.
+
+Housing Officer-only notes and officer audit identifiers are intentionally omitted from Student application responses.
+
+### Housing Officer Application Review
+
+The Housing Officer application API is restricted to the `HOUSING_OFFICER` role.
+
+Retrieve housing applications:
+
+```text
+GET /api/applications
+```
+
+Retrieve a specific housing application:
+
+```text
+GET /api/applications/:applicationId
+```
+
+Update internal Housing Officer notes:
+
+```text
+PUT /api/applications/:applicationId/notes
+```
+
+Approve a submitted application:
+
+```text
+POST /api/applications/:applicationId/approve
+```
+
+Cancel an eligible application:
+
+```text
+POST /api/applications/:applicationId/cancel
+```
+
+The Housing Officer application view includes Student context needed to review an application, including:
+
+```text
+Student number
+Student name
+Gender
+Academic status
+Major
+Anticipated graduation
+Academic year
+Preferred residence hall
+Preferred room style
+Application status
+Lifecycle information
+Internal Housing Officer notes
+```
+
+Housing Officer notes are private administrative information and are not included in Student-facing API responses.
+
+Internal notes are limited to 5,000 characters. The limit is enforced by both the Angular interface and backend service.
+
+Only a `SUBMITTED` application can be approved.
+
+Approval records both the approval timestamp and the Housing Officer responsible for the approval.
+
+Cancellation records the cancellation timestamp and the user responsible for the cancellation.
 
 ## Health Check
 
@@ -788,6 +979,22 @@ The automated backend tests currently cover areas including:
 - Student Profile validation
 - Student Profile API role authorization
 - Student ownership boundaries
+- Student housing application creation
+- Draft housing application updates
+- Housing application submission
+- Housing application cancellation
+- Academic-year validation
+- Residence hall and room-style preference validation
+- One-unsecured-application enforcement
+- Housing application lifecycle restrictions
+- Student application ownership boundaries
+- Student application response privacy
+- Housing Officer application retrieval
+- Housing Officer internal note persistence
+- Housing Officer application approval
+- Housing Officer application cancellation
+- Application approval and cancellation audit data
+- Student and Housing Officer application role authorization
 
 The authorization tests exercise real Express routes, role middleware, controllers, services, repositories, and the PostgreSQL database while replacing the external Auth0 authentication step with deterministic test identity data.
 
@@ -961,6 +1168,8 @@ GET /api/auth/me
 
 Navigation is then adjusted using the local role.
 
+Frontend navigation improves usability but is not treated as a security boundary. Protected backend endpoints independently enforce authentication, local user resolution, and role authorization.
+
 ### Student Navigation
 
 ```text
@@ -973,14 +1182,67 @@ My Lease
 My Profile
 ```
 
-The Housing Preferences route currently displays active residence halls and general availability by room style.
+#### Housing Preferences
 
-This view is read-only during the housing-inventory feature. Students cannot select an exact room or bed and cannot yet save housing preferences.
+The Housing Preferences screen displays active residence halls and general room-style availability.
 
-The following Student workflow pages remain placeholders until their planned feature branches are implemented:
+Students choose:
 
 ```text
-My Application
+Academic year
+Preferred residence hall
+Preferred room style
+```
+
+The academic-year field is presented as a controlled list containing the current academic year and the next two academic years.
+
+Saving preferences creates or updates a `DRAFT` housing application.
+
+Before submission, the Student receives a confirmation view showing:
+
+```text
+Residence hall
+Room style
+Academic year
+Roommate option
+```
+
+The roommate option currently indicates that roommate selection will be completed in the later Roommates workflow.
+
+Students may continue editing a draft before submission.
+
+After submission, the preference fields become read-only.
+
+Housing preferences do not reserve a room or bed and do not guarantee placement.
+
+#### My Application
+
+The My Application screen displays the Student's current housing application and application history.
+
+The screen shows information including:
+
+```text
+Application status
+Academic year
+Preferred residence hall
+Preferred room style
+Submitted date
+Approved date
+Housing-assigned date
+Completed date
+Cancelled date
+Next workflow step
+```
+
+Students can cancel applications that remain in an eligible pre-assignment state.
+
+Housing Officer internal notes are intentionally not displayed to Students.
+
+#### Student Placeholder Routes
+
+The following Student workflow areas remain placeholders until their planned feature branches are implemented:
+
+```text
 My Housing
 Roommates
 My Lease
@@ -994,6 +1256,8 @@ Housing Inventory
 Applications
 Assignments
 ```
+
+#### Housing Inventory
 
 Housing Inventory is implemented as an administrative Building → Room → Bed hierarchy.
 
@@ -1013,9 +1277,71 @@ The interface uses activation/deactivation rather than destructive delete operat
 
 When adding beds, the interface warns the Housing Officer if the number of existing beds already meets the normal count represented by the room style. The officer can still continue because physical capacity is derived from Bed records.
 
-The Applications and Assignments routes remain placeholders for their later feature branches.
+#### Applications
 
-Frontend navigation improves usability but is not treated as a security boundary. Protected backend endpoints continue to enforce authentication and role authorization independently.
+The Applications screen allows Housing Officers to review Student housing applications.
+
+The Housing Officer can:
+
+```text
+View the application list
+Review Student Profile context
+Review housing preferences
+View application status
+Maintain private internal notes
+Approve submitted applications
+Cancel eligible pre-assignment applications
+```
+
+Housing Officer notes remain private and are not exposed through Student APIs or Student pages.
+
+#### Housing Officer Placeholder Routes
+
+The following Housing Officer workflow area remains a placeholder until its planned feature branch is implemented:
+
+```text
+Assignments
+```
+
+## Housing Application Workflow
+
+The application lifecycle is:
+
+```text
+DRAFT
+  ↓
+SUBMITTED
+  ↓
+APPROVED
+  ↓
+HOUSING_ASSIGNED
+  ↓
+COMPLETED
+```
+
+`CANCELLED` is available where appropriate before the later assignment and completion workflows take control.
+
+The currently implemented workflow covers:
+
+```text
+Student creates a DRAFT application
+        ↓
+Student selects housing preferences
+        ↓
+Student reviews and submits the application
+        ↓
+Application becomes SUBMITTED
+        ↓
+Housing Officer reviews the application
+        ↓
+Housing Officer can save private notes
+        ↓
+Housing Officer approves the application
+        ↓
+Application becomes APPROVED
+```
+
+The later `HOUSING_ASSIGNED` and `COMPLETED` transitions belong to the housing-assignment and lease feature branches rather than being simulated in the current application workflow.
 
 ## Planned Campus Rental Features
 
@@ -1034,6 +1360,8 @@ The current implementation roadmap includes:
 10. End-to-end testing and hardening
 11. CI/CD and observability
 12. Final project documentation and presentation preparation
+
+Features 0 through 6 are currently represented in the implementation.
 
 The roadmap is a working plan and may be adjusted as implementation reveals better sequencing or technical needs.
 
@@ -1061,7 +1389,15 @@ A bed is unavailable when the building, room, or bed is inactive, or when the be
 
 Students review general residence hall and room-style availability rather than exact room or bed inventory.
 
-Students will submit residence hall and room-style preferences rather than selecting a specific room or bed. Housing Officers will make final assignments.
+Students submit residence hall and room-style preferences rather than selecting a specific room or bed. Housing Officers make final assignments.
+
+Student housing preferences remain editable while the application is in `DRAFT` and become read-only after submission.
+
+The backend and database prevent a Student from maintaining multiple unsecured housing applications at the same time.
+
+Housing Officer notes are private administrative information and are excluded from Student-facing application responses.
+
+Application approval and cancellation maintain actor and timestamp information so administrative actions remain traceable.
 
 Roommate matching will support both direct mutual roommate requests and opt-in AI-assisted recommendations. AI recommendations will remain advisory and will not automatically pair students or make housing assignments.
 
