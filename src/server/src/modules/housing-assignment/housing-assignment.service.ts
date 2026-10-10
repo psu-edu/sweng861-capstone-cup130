@@ -10,6 +10,10 @@ import {
 } from './housing-assignment.repository.js';
 
 import {
+  applyHousingAssignmentGenderPolicy,
+} from './housing-assignment-gender-policy.repository.js';
+
+import {
   findDetailedStudentHousingAssignments,
 } from './student-housing.repository.js';
 
@@ -267,7 +271,10 @@ export async function getHousingAssignmentOptions(
     );
   }
 
-  return options;
+  return applyHousingAssignmentGenderPolicy(
+    applicationId,
+    options,
+  );
 }
 
 export async function createHousingAssignment(
