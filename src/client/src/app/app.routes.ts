@@ -7,6 +7,7 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { Placeholder } from './pages/placeholder/placeholder';
 import {StudentProfilePage} from './pages/student-profile/student-profile';
 import {HousingInventoryPage,} from './pages/housing-inventory/housing-inventory';
+import {HousingOptionsPage,} from './pages/housing-options/housing-options';
 
 export const routes: Routes = [
   {
@@ -31,12 +32,7 @@ export const routes: Routes = [
       },
       {
         path: 'housing-preferences',
-        component: Placeholder,
-        data: {
-          title: 'Housing Preferences',
-          description:
-            'Choose your preferred residence hall and room style.',
-        },
+        component: HousingOptionsPage,
       },
       {
         path: 'application',
