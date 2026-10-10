@@ -78,7 +78,8 @@ interface AcceptedRoommateRow {
   first_name: string;
   last_name: string;
   roommate_application_id: string | null;
-  roommate_application_status: HousingApplicationStatus | null;
+  roommate_application_status:
+    HousingApplicationStatus | null;
 }
 
 interface AssignmentOptionApplicationRow {
@@ -125,6 +126,16 @@ interface LockedAssignmentRow {
   status: HousingAssignmentStatus;
 }
 
+interface LockedLeaseRow {
+  id: string;
+  status: string;
+}
+
+type LeasePreparationResult =
+  | 'ready'
+  | 'lease_sent_for_signature'
+  | 'lease_signed';
+
 export type ReserveAssignmentResult =
   | {
       kind: 'created';
@@ -157,6 +168,39 @@ export type ReservePairAssignmentResult =
         | 'beds_not_same_room'
         | 'bed_unavailable'
         | 'bed_conflict';
+    };
+
+export type ChangeAssignmentResult =
+  | {
+      kind: 'changed';
+      assignment: HousingAssignmentRecord;
+    }
+  | {
+      kind:
+        | 'assignment_not_found'
+        | 'assignment_not_reserved'
+        | 'application_not_assigned'
+        | 'bed_not_found'
+        | 'same_bed'
+        | 'bed_unavailable'
+        | 'bed_conflict'
+        | 'lease_sent_for_signature'
+        | 'lease_signed';
+    };
+
+export type CancelAssignmentOnlyResult =
+  | {
+      kind: 'cancelled';
+      assignment: HousingAssignmentRecord;
+    }
+  | {
+      kind:
+        | 'assignment_not_found'
+        | 'assignment_not_reserved'
+        | 'application_not_assigned'
+        | 'unsecured_application_conflict'
+        | 'lease_sent_for_signature'
+        | 'lease_signed';
     };
 
 export type CancelAssignmentResult =
@@ -274,30 +318,108 @@ async function findAssignmentByIdWithClient(
   client: PoolClient,
   assignmentId: string,
 ): Promise<HousingAssignmentRecord | null> {
-  const result = await client.query<AssignmentRow>(
-    `
-      ${ASSIGNMENT_SELECT}
-      WHERE assignment.id = $1
-    `,
-    [
-      assignmentId,
-    ],
-  );
+  const result =
+    await client.query<AssignmentRow>(
+      `
+        ${ASSIGNMENT_SELECT}
+        WHERE assignment.id = $1
+      `,
+      [
+        assignmentId,
+      ],
+    );
 
-  const row = result.rows[0];
+  const row =
+    result.rows[0];
 
   return row === undefined
     ? null
     : mapAssignment(row);
 }
 
+async function prepareLocalLeaseForAssignmentEnd(
+  client: PoolClient,
+  assignmentId: string,
+  officerId: string,
+): Promise<LeasePreparationResult> {
+  const leaseResult =
+    await client.query<LockedLeaseRow>(
+      `
+        SELECT
+          id,
+          status
+        FROM leases
+        WHERE assignment_id = $1
+        FOR UPDATE
+      `,
+      [
+        assignmentId,
+      ],
+    );
+
+  const lease =
+    leaseResult.rows[0];
+
+  if (
+    lease?.status
+    === 'SENT_FOR_SIGNATURE'
+  ) {
+    return 'lease_sent_for_signature';
+  }
+
+  if (
+    lease?.status
+    === 'SIGNED'
+  ) {
+    return 'lease_signed';
+  }
+
+  if (
+    lease !== undefined
+    && (
+      lease.status === 'PENDING'
+      || lease.status
+        === 'GENERATED'
+    )
+  ) {
+    await client.query(
+      `
+        UPDATE leases
+        SET
+          status = 'VOIDED',
+          voided_at = NOW(),
+          voided_by = $2,
+          updated_at = NOW()
+        WHERE id = $1
+      `,
+      [
+        lease.id,
+        officerId,
+      ],
+    );
+  }
+
+  return 'ready';
+}
+
 async function findAcceptedRoommates(
   applicationIds: string[],
-): Promise<Map<string, HousingAssignmentRoommate[]>> {
+): Promise<
+  Map<
+    string,
+    HousingAssignmentRoommate[]
+  >
+> {
   const roommates =
-    new Map<string, HousingAssignmentRoommate[]>();
+    new Map<
+      string,
+      HousingAssignmentRoommate[]
+    >();
 
-  if (applicationIds.length === 0) {
+  if (
+    applicationIds.length
+    === 0
+  ) {
     return roommates;
   }
 
@@ -367,17 +489,27 @@ async function findAcceptedRoommates(
       ],
     );
 
-  for (const row of result.rows) {
+  for (
+    const row
+    of result.rows
+  ) {
     const existing =
-      roommates.get(row.application_id)
+      roommates.get(
+        row.application_id,
+      )
       ?? [];
 
     existing.push({
-      requestId: row.request_id,
-      studentId: row.student_id,
-      studentNumber: row.student_number,
-      firstName: row.first_name,
-      lastName: row.last_name,
+      requestId:
+        row.request_id,
+      studentId:
+        row.student_id,
+      studentNumber:
+        row.student_number,
+      firstName:
+        row.first_name,
+      lastName:
+        row.last_name,
       applicationId:
         row.roommate_application_id,
       applicationStatus:
@@ -427,6 +559,10 @@ Promise<HousingAssignmentApplication[]> {
         LEFT JOIN housing_assignments assignment
           ON assignment.application_id =
             application.id
+          AND assignment.status IN (
+            'RESERVED',
+            'CONFIRMED'
+          )
         WHERE application.status IN (
           'APPROVED',
           'HOUSING_ASSIGNED'
@@ -446,37 +582,52 @@ Promise<HousingAssignmentApplication[]> {
   const roommateMap =
     await findAcceptedRoommates(
       result.rows.map(
-        (row) => row.id,
+        (row) =>
+          row.id,
       ),
     );
 
   return result.rows.map(
-    (row): HousingAssignmentApplication => ({
+    (
+      row,
+    ): HousingAssignmentApplication => ({
       id: row.id,
-      studentId: row.student_id,
-      studentNumber: row.student_number,
-      firstName: row.first_name,
-      lastName: row.last_name,
-      gender: row.gender,
-      academicStatus: row.academic_status,
-      major: row.major,
+      studentId:
+        row.student_id,
+      studentNumber:
+        row.student_number,
+      firstName:
+        row.first_name,
+      lastName:
+        row.last_name,
+      gender:
+        row.gender,
+      academicStatus:
+        row.academic_status,
+      major:
+        row.major,
       anticipatedGraduationSemester:
         row.anticipated_graduation_semester,
       anticipatedGraduationYear:
         row.anticipated_graduation_year,
-      academicYear: row.academic_year,
+      academicYear:
+        row.academic_year,
       preferredBuildingId:
         row.preferred_building_id,
       preferredBuildingName:
         row.preferred_building_name,
       preferredRoomStyle:
         row.preferred_room_style,
-      status: row.status,
-      assignmentId: row.assignment_id,
+      status:
+        row.status,
+      assignmentId:
+        row.assignment_id,
       assignmentStatus:
         row.assignment_status,
       roommates:
-        roommateMap.get(row.id)
+        roommateMap.get(
+          row.id,
+        )
         ?? [],
     }),
   );
@@ -561,7 +712,9 @@ export async function findHousingAssignmentOptions(
   const application =
     applicationResult.rows[0];
 
-  if (application === undefined) {
+  if (
+    application === undefined
+  ) {
     return null;
   }
 
@@ -593,7 +746,8 @@ export async function findHousingAssignmentOptions(
           ON room.building_id =
             building.id
         JOIN beds bed
-          ON bed.room_id = room.id
+          ON bed.room_id =
+            room.id
         WHERE building.active = TRUE
           AND room.active = TRUE
           AND bed.active = TRUE
@@ -609,8 +763,10 @@ export async function findHousingAssignmentOptions(
           bed.bed_label
       `,
       [
-        application.preferred_building_id,
-        application.preferred_room_style,
+        application
+          .preferred_building_id,
+        application
+          .preferred_room_style,
       ],
     );
 
@@ -638,10 +794,14 @@ export async function findHousingAssignmentOptions(
         row.building_id,
       );
 
-    if (building === undefined) {
+    if (
+      building === undefined
+    ) {
       building = {
-        id: row.building_id,
-        name: row.building_name,
+        id:
+          row.building_id,
+        name:
+          row.building_name,
         address:
           row.building_address,
         preferredBuilding:
@@ -666,22 +826,27 @@ export async function findHousingAssignmentOptions(
         row.room_id,
       );
 
-    if (room === undefined) {
+    if (
+      room === undefined
+    ) {
       const preferredRoomStyle =
         row.room_style
         === application
           .preferred_room_style;
 
       room = {
-        id: row.room_id,
+        id:
+          row.room_id,
         roomNumber:
           row.room_number,
-        floor: row.floor,
+        floor:
+          row.floor,
         roomStyle:
           row.room_style,
         preferredRoomStyle,
         matchesPreferences:
-          building.preferredBuilding
+          building
+            .preferredBuilding
           && preferredRoomStyle,
         availableBedCount: 0,
         beds: [],
@@ -698,14 +863,17 @@ export async function findHousingAssignmentOptions(
     }
 
     room.beds.push({
-      id: row.bed_id,
+      id:
+        row.bed_id,
       bedLabel:
         row.bed_label,
       available:
         row.available,
     });
 
-    if (row.available) {
+    if (
+      row.available
+    ) {
       room.availableBedCount +=
         1;
     }
@@ -763,7 +931,9 @@ export async function reserveHousingAssignment(
     const application =
       applicationResult.rows[0];
 
-    if (application === undefined) {
+    if (
+      application === undefined
+    ) {
       await client.query(
         'ROLLBACK',
       );
@@ -817,7 +987,9 @@ export async function reserveHousingAssignment(
     const bed =
       bedResult.rows[0];
 
-    if (bed === undefined) {
+    if (
+      bed === undefined
+    ) {
       await client.query(
         'ROLLBACK',
       );
@@ -926,7 +1098,8 @@ export async function reserveHousingAssignment(
             updated_at =
               NOW()
           WHERE id = $1
-            AND status = 'APPROVED'
+            AND status =
+              'APPROVED'
         `,
         [
           applicationId,
@@ -948,7 +1121,9 @@ export async function reserveHousingAssignment(
         assignmentId,
       );
 
-    if (assignment === null) {
+    if (
+      assignment === null
+    ) {
       throw new Error(
         'Created housing assignment could not be retrieved.',
       );
@@ -959,10 +1134,13 @@ export async function reserveHousingAssignment(
     );
 
     return {
-      kind: 'created',
+      kind:
+        'created',
       assignment,
     };
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     await client.query(
       'ROLLBACK',
     );
@@ -1200,7 +1378,8 @@ export async function reserveRoommatePairAssignments(
     const firstBed =
       bedResult.rows.find(
         (row) =>
-          row.id === bedId,
+          row.id
+          === bedId,
       );
 
     const secondBed =
@@ -1241,10 +1420,12 @@ export async function reserveRoommatePairAssignments(
     if (
       !firstBed.bed_active
       || !firstBed.room_active
-      || !firstBed.building_active
+      || !firstBed
+        .building_active
       || !secondBed.bed_active
       || !secondBed.room_active
-      || !secondBed.building_active
+      || !secondBed
+        .building_active
     ) {
       await client.query(
         'ROLLBACK',
@@ -1417,14 +1598,17 @@ export async function reserveRoommatePairAssignments(
     );
 
     return {
-      kind: 'created',
+      kind:
+        'created',
 
       assignments: [
         firstAssignment,
         secondAssignment,
       ],
     };
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     await client.query(
       'ROLLBACK',
     );
@@ -1438,6 +1622,613 @@ export async function reserveRoommatePairAssignments(
       return {
         kind:
           'bed_conflict',
+      };
+    }
+
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function changeReservedHousingAssignment(
+  assignmentId: string,
+  targetBedId: string,
+  officerId: string,
+): Promise<ChangeAssignmentResult> {
+  const client =
+    await pool.connect();
+
+  try {
+    await client.query(
+      'BEGIN',
+    );
+
+    const assignmentResult =
+      await client.query<LockedAssignmentRow>(
+        `
+          SELECT
+            id,
+            application_id,
+            bed_id,
+            status
+          FROM housing_assignments
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [
+          assignmentId,
+        ],
+      );
+
+    const assignment =
+      assignmentResult.rows[0];
+
+    if (
+      assignment === undefined
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'assignment_not_found',
+      };
+    }
+
+    if (
+      assignment.status
+      !== 'RESERVED'
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'assignment_not_reserved',
+      };
+    }
+
+    if (
+      assignment.bed_id
+      === targetBedId
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'same_bed',
+      };
+    }
+
+    const applicationResult =
+      await client.query<LockedApplicationRow>(
+        `
+          SELECT
+            id,
+            student_id,
+            academic_year,
+            status
+          FROM housing_applications
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [
+          assignment
+            .application_id,
+        ],
+      );
+
+    const application =
+      applicationResult.rows[0];
+
+    if (
+      application === undefined
+      || application.status
+        !== 'HOUSING_ASSIGNED'
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'application_not_assigned',
+      };
+    }
+
+    const bedIds = [
+      assignment.bed_id,
+      targetBedId,
+    ];
+
+    const bedResult =
+      await client.query<LockedBedRow>(
+        `
+          SELECT
+            bed.id,
+            bed.room_id,
+            bed.active AS bed_active,
+            room.active AS room_active,
+            building.active
+              AS building_active
+          FROM beds bed
+          JOIN rooms room
+            ON room.id =
+              bed.room_id
+          JOIN buildings building
+            ON building.id =
+              room.building_id
+          WHERE bed.id =
+            ANY($1::bigint[])
+          ORDER BY bed.id
+          FOR UPDATE
+            OF bed, room, building
+        `,
+        [
+          bedIds,
+        ],
+      );
+
+    const targetBed =
+      bedResult.rows.find(
+        (row) =>
+          row.id
+          === targetBedId,
+      );
+
+    if (
+      targetBed === undefined
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'bed_not_found',
+      };
+    }
+
+    if (
+      !targetBed.bed_active
+      || !targetBed.room_active
+      || !targetBed
+        .building_active
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'bed_unavailable',
+      };
+    }
+
+    const conflictResult =
+      await client.query<{
+        exists: boolean;
+      }>(
+        `
+          SELECT EXISTS (
+            SELECT 1
+            FROM housing_assignments
+            WHERE bed_id = $1
+              AND status IN (
+                'RESERVED',
+                'CONFIRMED'
+              )
+          ) AS exists
+        `,
+        [
+          targetBedId,
+        ],
+      );
+
+    if (
+      conflictResult
+        .rows[0]?.exists
+      === true
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'bed_conflict',
+      };
+    }
+
+    const leasePreparation =
+      await prepareLocalLeaseForAssignmentEnd(
+        client,
+        assignmentId,
+        officerId,
+      );
+
+    if (
+      leasePreparation
+      !== 'ready'
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          leasePreparation,
+      };
+    }
+
+    await client.query(
+      `
+        UPDATE housing_assignments
+        SET
+          status = 'CANCELLED',
+          cancelled_at = NOW(),
+          cancelled_by = $2,
+          updated_at = NOW()
+        WHERE id = $1
+          AND status = 'RESERVED'
+      `,
+      [
+        assignmentId,
+        officerId,
+      ],
+    );
+
+    const insertResult =
+      await client.query<{
+        id: string;
+      }>(
+        `
+          INSERT INTO housing_assignments (
+            application_id,
+            bed_id,
+            status,
+            reserved_at
+          )
+          VALUES (
+            $1,
+            $2,
+            'RESERVED',
+            NOW()
+          )
+          RETURNING id
+        `,
+        [
+          assignment
+            .application_id,
+          targetBedId,
+        ],
+      );
+
+    const newAssignmentId =
+      insertResult.rows[0]?.id;
+
+    if (
+      newAssignmentId
+      === undefined
+    ) {
+      throw new Error(
+        'Replacement housing assignment insert did not return an id.',
+      );
+    }
+
+    await client.query(
+      `
+        UPDATE housing_applications
+        SET
+          updated_at = NOW()
+        WHERE id = $1
+          AND status =
+            'HOUSING_ASSIGNED'
+      `,
+      [
+        assignment
+          .application_id,
+      ],
+    );
+
+    const replacement =
+      await findAssignmentByIdWithClient(
+        client,
+        newAssignmentId,
+      );
+
+    if (
+      replacement === null
+    ) {
+      throw new Error(
+        'Replacement housing assignment could not be retrieved.',
+      );
+    }
+
+    await client.query(
+      'COMMIT',
+    );
+
+    return {
+      kind:
+        'changed',
+      assignment:
+        replacement,
+    };
+  } catch (
+    error: unknown
+  ) {
+    await client.query(
+      'ROLLBACK',
+    );
+
+    if (
+      isDatabaseError(
+        error,
+        '23505',
+      )
+    ) {
+      return {
+        kind:
+          'bed_conflict',
+      };
+    }
+
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function cancelReservedHousingAssignmentOnly(
+  assignmentId: string,
+  officerId: string,
+): Promise<CancelAssignmentOnlyResult> {
+  const client =
+    await pool.connect();
+
+  try {
+    await client.query(
+      'BEGIN',
+    );
+
+    const assignmentResult =
+      await client.query<LockedAssignmentRow>(
+        `
+          SELECT
+            id,
+            application_id,
+            bed_id,
+            status
+          FROM housing_assignments
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [
+          assignmentId,
+        ],
+      );
+
+    const assignment =
+      assignmentResult.rows[0];
+
+    if (
+      assignment === undefined
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'assignment_not_found',
+      };
+    }
+
+    if (
+      assignment.status
+      !== 'RESERVED'
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'assignment_not_reserved',
+      };
+    }
+
+    const applicationResult =
+      await client.query<LockedApplicationRow>(
+        `
+          SELECT
+            id,
+            student_id,
+            academic_year,
+            status
+          FROM housing_applications
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [
+          assignment
+            .application_id,
+        ],
+      );
+
+    const application =
+      applicationResult.rows[0];
+
+    if (
+      application === undefined
+      || application.status
+        !== 'HOUSING_ASSIGNED'
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'application_not_assigned',
+      };
+    }
+
+    const unsecuredApplicationResult =
+      await client.query<{
+        exists: boolean;
+      }>(
+        `
+          SELECT EXISTS (
+            SELECT 1
+            FROM housing_applications other
+            WHERE other.student_id = $1
+              AND other.id <> $2
+              AND other.status IN (
+                'DRAFT',
+                'SUBMITTED',
+                'APPROVED'
+              )
+          ) AS exists
+        `,
+        [
+          application
+            .student_id,
+          application.id,
+        ],
+      );
+
+    if (
+      unsecuredApplicationResult
+        .rows[0]?.exists
+      === true
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          'unsecured_application_conflict',
+      };
+    }
+
+    await client.query(
+      `
+        SELECT id
+        FROM beds
+        WHERE id = $1
+        FOR UPDATE
+      `,
+      [
+        assignment
+          .bed_id,
+      ],
+    );
+
+    const leasePreparation =
+      await prepareLocalLeaseForAssignmentEnd(
+        client,
+        assignmentId,
+        officerId,
+      );
+
+    if (
+      leasePreparation
+      !== 'ready'
+    ) {
+      await client.query(
+        'ROLLBACK',
+      );
+
+      return {
+        kind:
+          leasePreparation,
+      };
+    }
+
+    await client.query(
+      `
+        UPDATE housing_assignments
+        SET
+          status = 'CANCELLED',
+          cancelled_at = NOW(),
+          cancelled_by = $2,
+          updated_at = NOW()
+        WHERE id = $1
+          AND status = 'RESERVED'
+      `,
+      [
+        assignmentId,
+        officerId,
+      ],
+    );
+
+    await client.query(
+      `
+        UPDATE housing_applications
+        SET
+          status = 'APPROVED',
+          housing_assigned_at = NULL,
+          cancelled_at = NULL,
+          cancelled_by = NULL,
+          updated_at = NOW()
+        WHERE id = $1
+          AND status =
+            'HOUSING_ASSIGNED'
+      `,
+      [
+        assignment
+          .application_id,
+      ],
+    );
+
+    const cancelled =
+      await findAssignmentByIdWithClient(
+        client,
+        assignmentId,
+      );
+
+    if (
+      cancelled === null
+    ) {
+      throw new Error(
+        'Cancelled housing assignment could not be retrieved.',
+      );
+    }
+
+    await client.query(
+      'COMMIT',
+    );
+
+    return {
+      kind:
+        'cancelled',
+      assignment:
+        cancelled,
+    };
+  } catch (
+    error: unknown
+  ) {
+    await client.query(
+      'ROLLBACK',
+    );
+
+    if (
+      isDatabaseError(
+        error,
+        '23505',
+      )
+    ) {
+      return {
+        kind:
+          'unsecured_application_conflict',
       };
     }
 
@@ -1479,7 +2270,9 @@ export async function cancelReservedHousingAssignment(
     const assignment =
       assignmentResult.rows[0];
 
-    if (assignment === undefined) {
+    if (
+      assignment === undefined
+    ) {
       await client.query(
         'ROLLBACK',
       );
@@ -1548,34 +2341,21 @@ export async function cancelReservedHousingAssignment(
         FOR UPDATE
       `,
       [
-        assignment.bed_id,
+        assignment
+          .bed_id,
       ],
     );
 
-    const leaseResult =
-      await client.query<{
-        id: string;
-        status: string;
-      }>(
-        `
-          SELECT
-            id,
-            status
-          FROM leases
-          WHERE assignment_id = $1
-          FOR UPDATE
-        `,
-        [
-          assignmentId,
-        ],
+    const leasePreparation =
+      await prepareLocalLeaseForAssignmentEnd(
+        client,
+        assignmentId,
+        officerId,
       );
 
-    const lease =
-      leaseResult.rows[0];
-
     if (
-      lease?.status
-      === 'SENT_FOR_SIGNATURE'
+      leasePreparation
+      !== 'ready'
     ) {
       await client.query(
         'ROLLBACK',
@@ -1583,47 +2363,8 @@ export async function cancelReservedHousingAssignment(
 
       return {
         kind:
-          'lease_sent_for_signature',
+          leasePreparation,
       };
-    }
-
-    if (
-      lease?.status
-      === 'SIGNED'
-    ) {
-      await client.query(
-        'ROLLBACK',
-      );
-
-      return {
-        kind:
-          'lease_signed',
-      };
-    }
-
-    if (
-      lease !== undefined
-      && (
-        lease.status === 'PENDING'
-        || lease.status
-          === 'GENERATED'
-      )
-    ) {
-      await client.query(
-        `
-          UPDATE leases
-          SET
-            status = 'VOIDED',
-            voided_at = NOW(),
-            voided_by = $2,
-            updated_at = NOW()
-          WHERE id = $1
-        `,
-        [
-          lease.id,
-          officerId,
-        ],
-      );
     }
 
     await client.query(
@@ -1656,7 +2397,8 @@ export async function cancelReservedHousingAssignment(
             'HOUSING_ASSIGNED'
       `,
       [
-        assignment.application_id,
+        assignment
+          .application_id,
         officerId,
       ],
     );
@@ -1667,7 +2409,9 @@ export async function cancelReservedHousingAssignment(
         assignmentId,
       );
 
-    if (cancelled === null) {
+    if (
+      cancelled === null
+    ) {
       throw new Error(
         'Cancelled housing assignment could not be retrieved.',
       );
@@ -1678,10 +2422,14 @@ export async function cancelReservedHousingAssignment(
     );
 
     return {
-      kind: 'cancelled',
-      assignment: cancelled,
+      kind:
+        'cancelled',
+      assignment:
+        cancelled,
     };
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     await client.query(
       'ROLLBACK',
     );

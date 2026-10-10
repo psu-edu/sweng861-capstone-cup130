@@ -217,7 +217,30 @@ export class HousingAssignmentApi {
       );
   }
 
-  cancelAssignment(
+  changeAssignment(
+    assignmentId: string,
+    bedId: string,
+  ) {
+    return this.http
+      .post<HousingAssignmentResponse>(
+        `/api/assignments/${assignmentId}/change`,
+        {
+          bedId,
+        },
+      );
+  }
+
+  cancelAssignmentOnly(
+    assignmentId: string,
+  ) {
+    return this.http
+      .post<HousingAssignmentResponse>(
+        `/api/assignments/${assignmentId}/cancel-assignment`,
+        {},
+      );
+  }
+
+  cancelApplication(
     assignmentId: string,
   ) {
     return this.http

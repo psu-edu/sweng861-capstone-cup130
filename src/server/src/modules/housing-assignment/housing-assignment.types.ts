@@ -63,7 +63,8 @@ export interface HousingAssignmentRoommate {
   firstName: string;
   lastName: string;
   applicationId: string | null;
-  applicationStatus: HousingApplicationStatus | null;
+  applicationStatus:
+    HousingApplicationStatus | null;
 }
 
 export interface HousingAssignmentApplication {
@@ -75,16 +76,20 @@ export interface HousingAssignmentApplication {
   gender: string;
   academicStatus: string;
   major: string;
-  anticipatedGraduationSemester: string | null;
-  anticipatedGraduationYear: number | null;
+  anticipatedGraduationSemester:
+    string | null;
+  anticipatedGraduationYear:
+    number | null;
   academicYear: string;
   preferredBuildingId: string;
   preferredBuildingName: string;
   preferredRoomStyle: RoomStyle;
   status: HousingApplicationStatus;
   assignmentId: string | null;
-  assignmentStatus: HousingAssignmentStatus | null;
-  roommates: HousingAssignmentRoommate[];
+  assignmentStatus:
+    HousingAssignmentStatus | null;
+  roommates:
+    HousingAssignmentRoommate[];
 }
 
 export interface HousingAssignmentOptionBed {
@@ -101,7 +106,8 @@ export interface HousingAssignmentOptionRoom {
   preferredRoomStyle: boolean;
   matchesPreferences: boolean;
   availableBedCount: number;
-  beds: HousingAssignmentOptionBed[];
+  beds:
+    HousingAssignmentOptionBed[];
 }
 
 export interface HousingAssignmentOptionBuilding {
@@ -109,7 +115,8 @@ export interface HousingAssignmentOptionBuilding {
   name: string;
   address: string;
   preferredBuilding: boolean;
-  rooms: HousingAssignmentOptionRoom[];
+  rooms:
+    HousingAssignmentOptionRoom[];
 }
 
 export interface HousingAssignmentOptions {
@@ -119,7 +126,8 @@ export interface HousingAssignmentOptions {
   preferredBuildingId: string;
   preferredBuildingName: string;
   preferredRoomStyle: RoomStyle;
-  buildings: HousingAssignmentOptionBuilding[];
+  buildings:
+    HousingAssignmentOptionBuilding[];
 }
 
 export interface CreateHousingAssignmentInput {
@@ -132,4 +140,8 @@ export interface CreateRoommatePairAssignmentInput {
   roommateApplicationId: string;
   bedId: string;
   roommateBedId: string;
+}
+
+export interface ChangeHousingAssignmentInput {
+  bedId: string;
 }

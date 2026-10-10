@@ -495,91 +495,153 @@
                 ) {
                   <button
                     type="button"
-                    class="danger-button"
+                    class="secondary-button"
+                    [disabled]="saving()"
+                    (click)="startChangeAssignment()"
+                  >
+                    Change Assignment
+                  </button>
+
+                  <button
+                    type="button"
+                    class="secondary-button"
                     [disabled]="saving()"
                     (click)="
-                      cancelAssignment(
+                      cancelAssignmentOnly(
                         assignment
                       )
                     "
                   >
                     Cancel Assignment
                   </button>
+
+                  <button
+                    type="button"
+                    class="danger-button"
+                    [disabled]="saving()"
+                    (click)="
+                      cancelApplication(
+                        assignment
+                      )
+                    "
+                  >
+                    Cancel Application
+                  </button>
                 }
               </div>
             </section>
           }
-        } @else if (
+        }
+
+        @if (
           application.status
             === 'APPROVED'
+          || changingAssignment()
         ) {
           <section class="assignment-workflow">
             <header class="workflow-header">
               <div>
                 <p class="section-label">
-                  Placement
+                  {{
+                    changingAssignment()
+                      ? 'Assignment Change'
+                      : 'Placement'
+                  }}
                 </p>
 
-                <h3>Select Assignment Type</h3>
+                <h3>
+                  {{
+                    changingAssignment()
+                      ? 'Choose a New Room and Bed'
+                      : 'Select Assignment Type'
+                  }}
+                </h3>
 
                 <p>
-                  Reserve one bed for this Student
-                  or place an eligible accepted
-                  roommate pair into two beds in
-                  the same room.
+                  @if (
+                    changingAssignment()
+                  ) {
+                    Select another available bed.
+                    The current reservation will
+                    remain in the assignment
+                    history and the housing
+                    application will stay active.
+                  } @else {
+                    Reserve one bed for this
+                    Student or place an eligible
+                    accepted roommate pair into
+                    two beds in the same room.
+                  }
                 </p>
               </div>
+
+              @if (
+                changingAssignment()
+              ) {
+                <button
+                  type="button"
+                  class="secondary-button"
+                  [disabled]="saving()"
+                  (click)="stopChangeAssignment()"
+                >
+                  Cancel Change
+                </button>
+              }
             </header>
 
-            <div class="mode-buttons">
-              <button
-                type="button"
-                class="mode-button"
-                [class.active-mode]="
-                  assignmentMode()
-                    === 'INDIVIDUAL'
-                "
-                [disabled]="saving()"
-                (click)="
-                  setAssignmentMode(
-                    'INDIVIDUAL'
-                  )
-                "
-              >
-                Individual Assignment
-              </button>
-
-              <button
-                type="button"
-                class="mode-button"
-                [class.active-mode]="
-                  assignmentMode()
-                    === 'PAIR'
-                "
-                [disabled]="
-                  saving()
-                  || eligibleRoommates()
-                    .length === 0
-                "
-                (click)="
-                  setAssignmentMode(
-                    'PAIR'
-                  )
-                "
-              >
-                Roommate Pair
-              </button>
-            </div>
-
             @if (
-              eligibleRoommates().length
-                === 0
+              !changingAssignment()
             ) {
-              <p class="helper-text">
-                No accepted roommate currently
-                has an approved application that
-                is ready for pair placement.
-              </p>
+              <div class="mode-buttons">
+                <button
+                  type="button"
+                  class="mode-button"
+                  [class.active-mode]="
+                    assignmentMode()
+                      === 'INDIVIDUAL'
+                  "
+                  [disabled]="saving()"
+                  (click)="
+                    setAssignmentMode(
+                      'INDIVIDUAL'
+                    )
+                  "
+                >
+                  Individual Assignment
+                </button>
+
+                <button
+                  type="button"
+                  class="mode-button"
+                  [class.active-mode]="
+                    assignmentMode()
+                      === 'PAIR'
+                  "
+                  [disabled]="
+                    saving()
+                    || eligibleRoommates()
+                      .length === 0
+                  "
+                  (click)="
+                    setAssignmentMode(
+                      'PAIR'
+                    )
+                  "
+                >
+                  Roommate Pair
+                </button>
+              </div>
+
+              @if (
+                eligibleRoommates().length
+                  === 0
+              ) {
+                <p class="helper-text">
+                  No accepted roommate currently
+                  has an approved application that
+                  is ready for pair placement.
+                </p>
+              }
             }
 
             @if (detailLoading()) {
@@ -632,6 +694,7 @@
                     {{
                       assignmentMode()
                         === 'PAIR'
+                        && !changingAssignment()
                         ? 'No active room currently has two available beds for roommate-pair placement.'
                         : 'No active beds are currently available for assignment.'
                     }}
@@ -786,7 +849,8 @@
                     </header>
 
                     @if (
-                      assignmentMode()
+                      changingAssignment()
+                      || assignmentMode()
                         === 'INDIVIDUAL'
                     ) {
                       <div class="form-field">
@@ -825,13 +889,17 @@
                           class="primary-button"
                           [disabled]="saving()"
                           (click)="
-                            createIndividualAssignment()
+                            changingAssignment()
+                              ? changeCurrentAssignment()
+                              : createIndividualAssignment()
                           "
                         >
                           {{
                             saving()
-                              ? 'Reserving...'
-                              : 'Reserve Bed'
+                              ? 'Saving...'
+                              : changingAssignment()
+                                ? 'Change Assignment'
+                                : 'Reserve Bed'
                           }}
                         </button>
                       </div>

@@ -1,5 +1,7 @@
 import {
   cancelReservedHousingAssignment,
+  cancelReservedHousingAssignmentOnly,
+  changeReservedHousingAssignment,
   findAllHousingAssignments,
   findHousingAssignmentApplications,
   findHousingAssignmentOptions,
@@ -9,6 +11,7 @@ import {
 } from './housing-assignment.repository.js';
 
 import type {
+  ChangeHousingAssignmentInput,
   CreateHousingAssignmentInput,
   CreateRoommatePairAssignmentInput,
   HousingAssignmentApplication,
@@ -97,7 +100,9 @@ function validateId(
 function validateCreateInput(
   input: unknown,
 ): CreateHousingAssignmentInput {
-  if (!isRecord(input)) {
+  if (
+    !isRecord(input)
+  ) {
     throw new HousingAssignmentValidationError(
       'Housing assignment data is required.',
     );
@@ -123,7 +128,9 @@ function validateCreateInput(
 function validatePairInput(
   input: unknown,
 ): CreateRoommatePairAssignmentInput {
-  if (!isRecord(input)) {
+  if (
+    !isRecord(input)
+  ) {
     throw new HousingAssignmentValidationError(
       'Roommate pair assignment data is required.',
     );
@@ -172,7 +179,8 @@ function validatePairInput(
 
   if (
     validated.bedId
-    === validated.roommateBedId
+    === validated
+      .roommateBedId
   ) {
     throw new HousingAssignmentValidationError(
       'Roommate pair assignment requires two different beds.',
@@ -180,6 +188,27 @@ function validatePairInput(
   }
 
   return validated;
+}
+
+function validateChangeInput(
+  input: unknown,
+): ChangeHousingAssignmentInput {
+  if (
+    !isRecord(input)
+  ) {
+    throw new HousingAssignmentValidationError(
+      'Housing assignment change data is required.',
+    );
+  }
+
+  return {
+    bedId:
+      getId(
+        input,
+        'bedId',
+        'Bed id',
+      ),
+  };
 }
 
 export async function getHousingAssignmentOverview():
@@ -216,7 +245,9 @@ export async function getHousingAssignmentOptions(
       applicationId,
     );
 
-  if (options === null) {
+  if (
+    options === null
+  ) {
     throw new HousingAssignmentNotFoundError(
       'Housing application was not found.',
     );
@@ -224,10 +255,12 @@ export async function getHousingAssignmentOptions(
 
   if (
     options.status
-    !== 'APPROVED'
+      !== 'APPROVED'
+    && options.status
+      !== 'HOUSING_ASSIGNED'
   ) {
     throw new HousingAssignmentConflictError(
-      'Only approved housing applications can receive a housing assignment.',
+      'Only approved or housing-assigned applications can load housing assignment options.',
     );
   }
 
@@ -248,7 +281,9 @@ export async function createHousingAssignment(
       validated.bedId,
     );
 
-  switch (result.kind) {
+  switch (
+    result.kind
+  ) {
     case 'created':
       return result.assignment;
 
@@ -298,7 +333,9 @@ export async function createRoommatePairAssignments(
       validated.roommateBedId,
     );
 
-  switch (result.kind) {
+  switch (
+    result.kind
+  ) {
     case 'created':
       return result.assignments;
 
@@ -344,6 +381,134 @@ export async function createRoommatePairAssignments(
   }
 }
 
+export async function changeHousingAssignment(
+  assignmentId: string,
+  officerId: string,
+  input: unknown,
+): Promise<HousingAssignmentRecord> {
+  validateId(
+    assignmentId,
+    'Housing assignment id',
+  );
+
+  const validated =
+    validateChangeInput(
+      input,
+    );
+
+  const result =
+    await changeReservedHousingAssignment(
+      assignmentId,
+      validated.bedId,
+      officerId,
+    );
+
+  switch (
+    result.kind
+  ) {
+    case 'changed':
+      return result.assignment;
+
+    case 'assignment_not_found':
+      throw new HousingAssignmentNotFoundError(
+        'Housing assignment was not found.',
+      );
+
+    case 'assignment_not_reserved':
+      throw new HousingAssignmentConflictError(
+        'Only reserved housing assignments can be changed.',
+      );
+
+    case 'application_not_assigned':
+      throw new HousingAssignmentConflictError(
+        'The related housing application is no longer in the assigned state.',
+      );
+
+    case 'bed_not_found':
+      throw new HousingAssignmentNotFoundError(
+        'Bed was not found.',
+      );
+
+    case 'same_bed':
+      throw new HousingAssignmentValidationError(
+        'Select a different bed for the housing assignment.',
+      );
+
+    case 'bed_unavailable':
+      throw new HousingAssignmentConflictError(
+        'The selected bed is not active and available for assignment.',
+      );
+
+    case 'bed_conflict':
+      throw new HousingAssignmentConflictError(
+        'The selected bed is no longer available.',
+      );
+
+    case 'lease_sent_for_signature':
+      throw new HousingAssignmentConflictError(
+        'The lease has already been sent for signature and must be voided through the lease workflow before changing this assignment.',
+      );
+
+    case 'lease_signed':
+      throw new HousingAssignmentConflictError(
+        'A housing assignment with a signed lease cannot be changed through this workflow.',
+      );
+  }
+}
+
+export async function cancelHousingAssignmentOnly(
+  assignmentId: string,
+  officerId: string,
+): Promise<HousingAssignmentRecord> {
+  validateId(
+    assignmentId,
+    'Housing assignment id',
+  );
+
+  const result =
+    await cancelReservedHousingAssignmentOnly(
+      assignmentId,
+      officerId,
+    );
+
+  switch (
+    result.kind
+  ) {
+    case 'cancelled':
+      return result.assignment;
+
+    case 'assignment_not_found':
+      throw new HousingAssignmentNotFoundError(
+        'Housing assignment was not found.',
+      );
+
+    case 'assignment_not_reserved':
+      throw new HousingAssignmentConflictError(
+        'Only reserved housing assignments can be cancelled through this workflow.',
+      );
+
+    case 'application_not_assigned':
+      throw new HousingAssignmentConflictError(
+        'The related housing application is no longer in the assigned state.',
+      );
+
+    case 'unsecured_application_conflict':
+      throw new HousingAssignmentConflictError(
+        'The housing application cannot return to approved status while another unsecured housing application is active for this student.',
+      );
+
+    case 'lease_sent_for_signature':
+      throw new HousingAssignmentConflictError(
+        'The lease has already been sent for signature and must be voided through the lease workflow before cancelling this assignment.',
+      );
+
+    case 'lease_signed':
+      throw new HousingAssignmentConflictError(
+        'A housing assignment with a signed lease cannot be cancelled through this workflow.',
+      );
+  }
+}
+
 export async function cancelHousingAssignment(
   assignmentId: string,
   officerId: string,
@@ -359,7 +524,9 @@ export async function cancelHousingAssignment(
       officerId,
     );
 
-  switch (result.kind) {
+  switch (
+    result.kind
+  ) {
     case 'cancelled':
       return result.assignment;
 

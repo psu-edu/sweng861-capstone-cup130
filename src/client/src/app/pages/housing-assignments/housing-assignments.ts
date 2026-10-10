@@ -102,6 +102,9 @@ implements OnInit {
       'INDIVIDUAL',
     );
 
+  protected readonly changingAssignment =
+    signal(false);
+
   protected readonly selectedRoomId =
     signal<string | null>(
       null,
@@ -168,7 +171,9 @@ implements OnInit {
   }
 
   protected closeReview(): void {
-    if (this.saving()) {
+    if (
+      this.saving()
+    ) {
       return;
     }
 
@@ -197,14 +202,115 @@ implements OnInit {
 
     if (
       application === null
-      || application.status
-        !== 'APPROVED'
+      || (
+        application.status
+          !== 'APPROVED'
+        && !(
+          application.status
+            === 'HOUSING_ASSIGNED'
+          && this.changingAssignment()
+        )
+      )
     ) {
       return;
     }
 
     this.loadOptions(
       application.id,
+    );
+  }
+
+  protected startChangeAssignment():
+  void {
+    const application =
+      this.selectedApplication();
+
+    if (
+      application === null
+      || application.status
+        !== 'HOUSING_ASSIGNED'
+    ) {
+      return;
+    }
+
+    const assignment =
+      this.currentAssignment(
+        application,
+      );
+
+    if (
+      assignment === null
+      || assignment.status
+        !== 'RESERVED'
+    ) {
+      return;
+    }
+
+    this.changingAssignment.set(
+      true,
+    );
+
+    this.assignmentMode.set(
+      'INDIVIDUAL',
+    );
+
+    this.selectedRoomId.set(
+      null,
+    );
+
+    this.selectedBedControl.setValue(
+      '',
+    );
+
+    this.roommateBedControl.setValue(
+      '',
+    );
+
+    this
+      .selectedRoommateApplicationControl
+      .setValue(
+        '',
+      );
+
+    this.error.set(
+      null,
+    );
+
+    this.message.set(
+      null,
+    );
+
+    this.loadOptions(
+      application.id,
+    );
+  }
+
+  protected stopChangeAssignment():
+  void {
+    if (
+      this.saving()
+    ) {
+      return;
+    }
+
+    this.changingAssignment.set(
+      false,
+    );
+
+    this.options.set(
+      null,
+    );
+
+    this.selectedRoomId.set(
+      null,
+    );
+
+    this.selectedBedControl.setValue(
+      '',
+    );
+
+    this.error.set(
+      null,
     );
   }
 
@@ -227,7 +333,9 @@ implements OnInit {
       '',
     );
 
-    if (mode === 'PAIR') {
+    if (
+      mode === 'PAIR'
+    ) {
       const firstRoommate =
         this.eligibleRoommates()[0];
 
@@ -250,7 +358,9 @@ implements OnInit {
     const application =
       this.selectedApplication();
 
-    if (application === null) {
+    if (
+      application === null
+    ) {
       return [];
     }
 
@@ -273,7 +383,9 @@ implements OnInit {
         .selectedRoommateApplicationControl
         .value;
 
-    if (applicationId === '') {
+    if (
+      applicationId === ''
+    ) {
       return null;
     }
 
@@ -362,6 +474,7 @@ implements OnInit {
     if (
       this.assignmentMode()
       === 'PAIR'
+      && !this.changingAssignment()
     ) {
       return (
         room.availableBedCount
@@ -446,6 +559,7 @@ implements OnInit {
       .setValue(
         this.assignmentMode()
           === 'PAIR'
+        && !this.changingAssignment()
           ? beds[1]?.id
             ?? ''
           : '',
@@ -478,7 +592,9 @@ implements OnInit {
             === roomId,
         );
 
-      if (room !== undefined) {
+      if (
+        room !== undefined
+      ) {
         return room;
       }
     }
@@ -542,7 +658,9 @@ implements OnInit {
     const room =
       this.selectedRoom();
 
-    if (room === null) {
+    if (
+      room === null
+    ) {
       this.error.set(
         'Select an available room before creating the assignment.',
       );
@@ -709,20 +827,55 @@ implements OnInit {
       });
   }
 
-  protected cancelAssignment(
-    assignment:
-      HousingAssignmentRecord,
-  ): void {
+  protected changeCurrentAssignment():
+  void {
+    const application =
+      this.selectedApplication();
+
     if (
-      assignment.status
-      !== 'RESERVED'
+      application === null
     ) {
+      return;
+    }
+
+    const assignment =
+      this.currentAssignment(
+        application,
+      );
+
+    const room =
+      this.selectedRoom();
+
+    const bedId =
+      this.selectedBedControl
+        .value;
+
+    if (
+      assignment === null
+      || assignment.status
+        !== 'RESERVED'
+    ) {
+      this.error.set(
+        'The current housing assignment is no longer available to change.',
+      );
+
+      return;
+    }
+
+    if (
+      room === null
+      || bedId === ''
+    ) {
+      this.error.set(
+        'Select a new room and bed before changing the assignment.',
+      );
+
       return;
     }
 
     if (
       !window.confirm(
-        `Cancel ${assignment.firstName} ${assignment.lastName}'s reserved housing assignment? This will release Bed ${assignment.bedLabel} and cancel the related housing application.`,
+        `Change ${application.firstName} ${application.lastName}'s assignment from ${assignment.buildingName}, Room ${assignment.roomNumber}, Bed ${assignment.bedLabel} to ${this.selectedBuildingName()}, Room ${room.roomNumber}, Bed ${this.bedLabel(room, bedId)}? The housing application will remain active.`,
       )
     ) {
       return;
@@ -741,13 +894,75 @@ implements OnInit {
     );
 
     this.assignmentApi
-      .cancelAssignment(
+      .changeAssignment(
+        assignment.id,
+        bedId,
+      )
+      .subscribe({
+        next: () => {
+          this.finishMutation(
+            'Housing assignment changed successfully.',
+          );
+        },
+
+        error:
+          (
+            error:
+              HttpErrorResponse,
+          ) => {
+            this.saving.set(
+              false,
+            );
+
+            this.error.set(
+              this.getErrorMessage(
+                error,
+                'Unable to change the housing assignment.',
+              ),
+            );
+          },
+      });
+  }
+
+  protected cancelAssignmentOnly(
+    assignment:
+      HousingAssignmentRecord,
+  ): void {
+    if (
+      assignment.status
+      !== 'RESERVED'
+    ) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Cancel ${assignment.firstName} ${assignment.lastName}'s reserved housing assignment? Bed ${assignment.bedLabel} will be released and the housing application will return to Approved so it can be assigned again. The application itself will not be cancelled.`,
+      )
+    ) {
+      return;
+    }
+
+    this.saving.set(
+      true,
+    );
+
+    this.error.set(
+      null,
+    );
+
+    this.message.set(
+      null,
+    );
+
+    this.assignmentApi
+      .cancelAssignmentOnly(
         assignment.id,
       )
       .subscribe({
         next: () => {
           this.finishMutation(
-            'Housing assignment cancelled and the bed was released.',
+            'Housing assignment cancelled. The application returned to Approved.',
           );
         },
 
@@ -764,6 +979,67 @@ implements OnInit {
               this.getErrorMessage(
                 error,
                 'Unable to cancel the housing assignment.',
+              ),
+            );
+          },
+      });
+  }
+
+  protected cancelApplication(
+    assignment:
+      HousingAssignmentRecord,
+  ): void {
+    if (
+      assignment.status
+      !== 'RESERVED'
+    ) {
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Cancel ${assignment.firstName} ${assignment.lastName}'s housing application? This will cancel the reserved assignment, release Bed ${assignment.bedLabel}, and cancel the related housing application.`,
+      )
+    ) {
+      return;
+    }
+
+    this.saving.set(
+      true,
+    );
+
+    this.error.set(
+      null,
+    );
+
+    this.message.set(
+      null,
+    );
+
+    this.assignmentApi
+      .cancelApplication(
+        assignment.id,
+      )
+      .subscribe({
+        next: () => {
+          this.finishMutation(
+            'Housing application and reserved assignment cancelled.',
+          );
+        },
+
+        error:
+          (
+            error:
+              HttpErrorResponse,
+          ) => {
+            this.saving.set(
+              false,
+            );
+
+            this.error.set(
+              this.getErrorMessage(
+                error,
+                'Unable to cancel the housing application.',
               ),
             );
           },
@@ -799,7 +1075,9 @@ implements OnInit {
   protected formatDate(
     value: string | null,
   ): string {
-    if (value === null) {
+    if (
+      value === null
+    ) {
       return '—';
     }
 
@@ -844,17 +1122,39 @@ implements OnInit {
       return 'Not specified';
     }
 
-    if (semester === null) {
-      return String(year);
+    if (
+      semester === null
+    ) {
+      return String(
+        year,
+      );
     }
 
-    if (year === null) {
+    if (
+      year === null
+    ) {
       return this.enumLabel(
         semester,
       );
     }
 
     return `${this.enumLabel(semester)} ${year}`;
+  }
+
+  protected enumLabel(
+    value: string,
+  ): string {
+    return value
+      .toLowerCase()
+      .replace(
+        /_/g,
+        ' ',
+      )
+      .replace(
+        /\b\w/g,
+        (character) =>
+          character.toUpperCase(),
+      );
   }
 
   private loadOverview(
@@ -1007,6 +1307,10 @@ implements OnInit {
       'INDIVIDUAL',
     );
 
+    this.changingAssignment.set(
+      false,
+    );
+
     this.selectedRoomId.set(
       null,
     );
@@ -1041,22 +1345,6 @@ implements OnInit {
         ?.bedLabel
       ?? ''
     );
-  }
-
-  protected enumLabel(
-    value: string,
-  ): string {
-    return value
-      .toLowerCase()
-      .replace(
-        /_/g,
-        ' ',
-      )
-      .replace(
-        /\b\w/g,
-        (character) =>
-          character.toUpperCase(),
-      );
   }
 
   private getErrorMessage(

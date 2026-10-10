@@ -10,6 +10,8 @@ import {
 
 import {
   cancelOfficerAssignment,
+  cancelOfficerAssignmentOnly,
+  changeOfficerAssignment,
   createOfficerAssignment,
   createOfficerRoommatePairAssignments,
   getCurrentStudentHousing,
@@ -44,6 +46,16 @@ housingAssignmentRouter.post(
 housingAssignmentRouter.post(
   '/pair',
   createOfficerRoommatePairAssignments,
+);
+
+housingAssignmentRouter.post(
+  '/:assignmentId/change',
+  changeOfficerAssignment,
+);
+
+housingAssignmentRouter.post(
+  '/:assignmentId/cancel-assignment',
+  cancelOfficerAssignmentOnly,
 );
 
 housingAssignmentRouter.post(

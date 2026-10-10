@@ -9,6 +9,8 @@ import type {
 
 import {
   cancelHousingAssignment,
+  cancelHousingAssignmentOnly,
+  changeHousingAssignment,
   createHousingAssignment,
   createRoommatePairAssignments,
   getHousingAssignmentOptions,
@@ -116,7 +118,9 @@ export async function getOfficerAssignmentOptions(
     res.status(200).json({
       options,
     });
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     if (
       handleHousingAssignmentError(
         error,
@@ -143,7 +147,9 @@ export async function createOfficerAssignment(
     res.status(201).json({
       assignment,
     });
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     if (
       handleHousingAssignmentError(
         error,
@@ -170,7 +176,106 @@ export async function createOfficerRoommatePairAssignments(
     res.status(201).json({
       assignments,
     });
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
+    if (
+      handleHousingAssignmentError(
+        error,
+        res,
+      )
+    ) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+export async function changeOfficerAssignment(
+  req: Request<AssignmentParams>,
+  res: Response,
+): Promise<void> {
+  const officerId =
+    getAuthenticatedUserId(
+      req,
+    );
+
+  if (
+    officerId === null
+  ) {
+    res.status(401).json({
+      error:
+        'unauthorized',
+      message:
+        'Authentication is required.',
+    });
+
+    return;
+  }
+
+  try {
+    const assignment =
+      await changeHousingAssignment(
+        req.params.assignmentId,
+        officerId,
+        req.body as unknown,
+      );
+
+    res.status(200).json({
+      assignment,
+    });
+  } catch (
+    error: unknown
+  ) {
+    if (
+      handleHousingAssignmentError(
+        error,
+        res,
+      )
+    ) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+export async function cancelOfficerAssignmentOnly(
+  req: Request<AssignmentParams>,
+  res: Response,
+): Promise<void> {
+  const officerId =
+    getAuthenticatedUserId(
+      req,
+    );
+
+  if (
+    officerId === null
+  ) {
+    res.status(401).json({
+      error:
+        'unauthorized',
+      message:
+        'Authentication is required.',
+    });
+
+    return;
+  }
+
+  try {
+    const assignment =
+      await cancelHousingAssignmentOnly(
+        req.params.assignmentId,
+        officerId,
+      );
+
+    res.status(200).json({
+      assignment,
+    });
+  } catch (
+    error: unknown
+  ) {
     if (
       handleHousingAssignmentError(
         error,
@@ -193,7 +298,9 @@ export async function cancelOfficerAssignment(
       req,
     );
 
-  if (officerId === null) {
+  if (
+    officerId === null
+  ) {
     res.status(401).json({
       error:
         'unauthorized',
@@ -214,7 +321,9 @@ export async function cancelOfficerAssignment(
     res.status(200).json({
       assignment,
     });
-  } catch (error: unknown) {
+  } catch (
+    error: unknown
+  ) {
     if (
       handleHousingAssignmentError(
         error,
@@ -237,7 +346,9 @@ export async function getCurrentStudentHousing(
       req,
     );
 
-  if (studentId === null) {
+  if (
+    studentId === null
+  ) {
     res.status(401).json({
       error:
         'unauthorized',
