@@ -9,6 +9,7 @@ import {handleAuthenticationError,} from './auth/auth.middleware.js';
 import {studentProfileRouter,} from './modules/student-profile/student-profile.routes.js';
 import {housingInventoryRouter,housingOptionsRouter,} from './modules/housing-inventory/housing-inventory.routes.js';
 import {housingOfficerApplicationRouter,studentHousingApplicationRouter,} from './modules/housing-application/housing-application.routes.js';
+import {studentRoommateMatchingRouter,} from './modules/roommate-matching/roommate-matching.routes.js';
 
 const app = express();
 
@@ -66,6 +67,11 @@ app.use(
 app.use(
   '/api/applications',
   housingOfficerApplicationRouter,
+);
+
+app.use(
+  '/api/student/roommates',
+  studentRoommateMatchingRouter,
 );
 
 app.use(

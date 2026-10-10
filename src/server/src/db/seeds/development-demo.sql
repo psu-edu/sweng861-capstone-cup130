@@ -75,7 +75,7 @@ SELECT
   'CR0001',
   'Alex',
   'Morgan',
-  'UNSPECIFIED',
+  'MALE',
   'SENIOR',
   'Computer Science',
   'SPRING',
@@ -84,7 +84,11 @@ SELECT
   '2026-08-01T12:00:00Z'
 FROM users
 WHERE auth_subject = 'demo|alex-morgan'
-ON CONFLICT DO NOTHING;
+ON CONFLICT (user_id)
+DO UPDATE
+SET
+  gender = EXCLUDED.gender,
+  updated_at = EXCLUDED.updated_at;
 
 INSERT INTO student_profiles (
   user_id,
@@ -104,7 +108,7 @@ SELECT
   'CR0002',
   'Jordan',
   'Lee',
-  'UNSPECIFIED',
+  'MALE',
   'JUNIOR',
   'Information Sciences and Technology',
   'SPRING',
@@ -113,7 +117,11 @@ SELECT
   '2026-08-01T12:00:00Z'
 FROM users
 WHERE auth_subject = 'demo|jordan-lee'
-ON CONFLICT DO NOTHING;
+ON CONFLICT (user_id)
+DO UPDATE
+SET
+  gender = EXCLUDED.gender,
+  updated_at = EXCLUDED.updated_at;
 
 INSERT INTO student_profiles (
   user_id,
@@ -133,7 +141,7 @@ SELECT
   'CR0003',
   'Taylor',
   'Brooks',
-  'UNSPECIFIED',
+  'FEMALE',
   'GRADUATE',
   'Software Engineering',
   'FALL',
@@ -142,7 +150,11 @@ SELECT
   '2026-08-01T12:00:00Z'
 FROM users
 WHERE auth_subject = 'demo|taylor-brooks'
-ON CONFLICT DO NOTHING;
+ON CONFLICT (user_id)
+DO UPDATE
+SET
+  gender = EXCLUDED.gender,
+  updated_at = EXCLUDED.updated_at;
 
 INSERT INTO student_profiles (
   user_id,
@@ -162,7 +174,7 @@ SELECT
   'CR0004',
   'Casey',
   'Nguyen',
-  'UNSPECIFIED',
+  'FEMALE',
   'SOPHOMORE',
   'Engineering',
   'SPRING',
@@ -171,7 +183,11 @@ SELECT
   '2026-08-01T12:00:00Z'
 FROM users
 WHERE auth_subject = 'demo|casey-nguyen'
-ON CONFLICT DO NOTHING;
+ON CONFLICT (user_id)
+DO UPDATE
+SET
+  gender = EXCLUDED.gender,
+  updated_at = EXCLUDED.updated_at;
 
 
 -- ============================================================

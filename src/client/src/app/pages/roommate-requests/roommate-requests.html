@@ -1,0 +1,542 @@
+<section class="page">
+  <header class="page-header">
+    <p class="eyebrow">
+      Roommate Options
+    </p>
+
+    <h1>Roommate Requests</h1>
+
+    <p>
+      Request someone you already know or respond
+      to requests from other students.
+    </p>
+  </header>
+
+  <nav
+    class="roommate-nav"
+    aria-label="Roommate options"
+  >
+    <a
+      routerLink="/roommates"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{
+        exact: true
+      }"
+    >
+      Matching
+    </a>
+
+    <a
+      routerLink="/roommates/profile"
+      routerLinkActive="active"
+    >
+      My Roommate Profile
+    </a>
+
+    <a
+      routerLink="/roommates/requests"
+      routerLinkActive="active"
+    >
+      Requests
+    </a>
+  </nav>
+
+  <div class="information-card">
+    <strong>
+      Direct roommate requests require mutual
+      consent.
+    </strong>
+
+    <p>
+      Search by student name or student number.
+      The other student must accept before a
+      roommate pair is established.
+    </p>
+
+    <p>
+      Roommate eligibility is determined by your
+      Student Profile. Campus Rental only returns
+      students who meet the same-gender housing
+      eligibility rule.
+    </p>
+
+    <a
+      routerLink="/profile"
+      class="text-link"
+    >
+      Review My Student Profile
+    </a>
+  </div>
+
+  @if (message()) {
+    <div
+      class="page-message success-message"
+      role="status"
+    >
+      {{ message() }}
+    </div>
+  }
+
+  @if (error()) {
+    <div
+      class="page-message error-message"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  }
+
+  <section class="card search-card">
+    <header class="section-header">
+      <div>
+        <p class="section-label">
+          Direct Request
+        </p>
+
+        <h2>Find a Student</h2>
+      </div>
+
+      <p>
+        Choose the housing cycle before sending
+        the request.
+      </p>
+    </header>
+
+    <div class="search-controls">
+      <div class="form-field year-field">
+        <label for="requestAcademicYear">
+          Academic Year
+        </label>
+
+        <select
+          id="requestAcademicYear"
+          [formControl]="academicYearControl"
+        >
+          @for (
+            year of academicYears;
+            track year
+          ) {
+            <option [value]="year">
+              {{ year }}
+            </option>
+          }
+        </select>
+      </div>
+
+      <div class="form-field search-field">
+        <label for="studentSearch">
+          Student Name or Number
+        </label>
+
+        <input
+          id="studentSearch"
+          type="text"
+          [formControl]="searchControl"
+          placeholder="Example: Jordan Lee or CR0002"
+          (keyup.enter)="search()"
+        />
+      </div>
+
+      <button
+        type="button"
+        class="primary-button search-button"
+        [disabled]="searching()"
+        (click)="search()"
+      >
+        {{
+          searching()
+            ? 'Searching...'
+            : 'Search'
+        }}
+      </button>
+    </div>
+
+    @if (
+      hasSearched()
+      && !searching()
+      && searchResults().length === 0
+      && !error()
+    ) {
+      <div class="empty-inline">
+        No eligible students matched that search.
+      </div>
+    }
+
+    @if (
+      searchResults().length > 0
+    ) {
+      <div class="search-results">
+        @for (
+          student of searchResults();
+          track student.studentId
+        ) {
+          <article class="student-result">
+            <div>
+              <h3>
+                {{ student.firstName }}
+                {{ student.lastName }}
+              </h3>
+
+              <p class="student-number">
+                {{ student.studentNumber }}
+              </p>
+
+              <p class="academic-context">
+                {{
+                  academicStatusLabel(
+                    student
+                  )
+                }}
+                ·
+                {{ student.major }}
+                ·
+                {{
+                  graduationLabel(
+                    student
+                  )
+                }}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="
+                sendingStudentId()
+                  !== null
+                || hasActiveRequestWith(
+                  student.studentId
+                )
+              "
+              (click)="
+                sendRequest(student)
+              "
+            >
+              @if (
+                hasActiveRequestWith(
+                  student.studentId
+                )
+              ) {
+                Request Active
+              } @else if (
+                sendingStudentId()
+                  === student.studentId
+              ) {
+                Sending...
+              } @else {
+                Send Request
+              }
+            </button>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading roommate requests...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="card">
+      <div
+        class="page-message error-message"
+        role="alert"
+      >
+        {{ loadError() }}
+      </div>
+    </div>
+  } @else {
+    @if (
+      acceptedRequests().length > 0
+    ) {
+      <section class="card">
+        <header class="section-header">
+          <div>
+            <p class="section-label">
+              Accepted
+            </p>
+
+            <h2>Accepted Roommate Requests</h2>
+          </div>
+        </header>
+
+        <div class="request-list">
+          @for (
+            roommateRequest
+              of acceptedRequests();
+            track roommateRequest.id
+          ) {
+            <article class="request-row">
+              <div>
+                <h3>
+                  {{
+                    otherStudent(
+                      roommateRequest
+                    ).firstName
+                  }}
+                  {{
+                    otherStudent(
+                      roommateRequest
+                    ).lastName
+                  }}
+                </h3>
+
+                <p>
+                  {{
+                    roommateRequest
+                      .academicYear
+                  }}
+                  ·
+                  {{
+                    otherStudent(
+                      roommateRequest
+                    ).major
+                  }}
+                </p>
+              </div>
+
+              <span
+                class="status-badge"
+                data-status="ACCEPTED"
+              >
+                Accepted
+              </span>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="request-columns">
+      <article class="card">
+        <header class="section-header compact-header">
+          <div>
+            <p class="section-label">
+              Incoming
+            </p>
+
+            <h2>Requests to You</h2>
+          </div>
+        </header>
+
+        @if (
+          incomingPending().length === 0
+        ) {
+          <p class="empty-text">
+            You have no pending incoming roommate
+            requests.
+          </p>
+        } @else {
+          <div class="request-list">
+            @for (
+              roommateRequest
+                of incomingPending();
+              track roommateRequest.id
+            ) {
+              <article class="request-row stacked-row">
+                <div>
+                  <h3>
+                    {{
+                      roommateRequest
+                        .requester.firstName
+                    }}
+                    {{
+                      roommateRequest
+                        .requester.lastName
+                    }}
+                  </h3>
+
+                  <p>
+                    {{
+                      roommateRequest
+                        .academicYear
+                    }}
+                    ·
+                    {{
+                      roommateRequest
+                        .requester.major
+                    }}
+                  </p>
+                </div>
+
+                <div class="row-actions">
+                  <button
+                    type="button"
+                    class="primary-button small-button"
+                    [disabled]="
+                      actingRequestId()
+                        !== null
+                    "
+                    (click)="
+                      acceptRequest(
+                        roommateRequest
+                      )
+                    "
+                  >
+                    {{
+                      actingRequestId()
+                        === roommateRequest.id
+                        ? 'Working...'
+                        : 'Accept'
+                    }}
+                  </button>
+
+                  <button
+                    type="button"
+                    class="secondary-button small-button"
+                    [disabled]="
+                      actingRequestId()
+                        !== null
+                    "
+                    (click)="
+                      declineRequest(
+                        roommateRequest
+                      )
+                    "
+                  >
+                    Decline
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </article>
+
+      <article class="card">
+        <header class="section-header compact-header">
+          <div>
+            <p class="section-label">
+              Outgoing
+            </p>
+
+            <h2>Requests You Sent</h2>
+          </div>
+        </header>
+
+        @if (
+          outgoingPending().length === 0
+        ) {
+          <p class="empty-text">
+            You have no pending outgoing roommate
+            requests.
+          </p>
+        } @else {
+          <div class="request-list">
+            @for (
+              roommateRequest
+                of outgoingPending();
+              track roommateRequest.id
+            ) {
+              <article class="request-row stacked-row">
+                <div>
+                  <h3>
+                    {{
+                      roommateRequest
+                        .requested.firstName
+                    }}
+                    {{
+                      roommateRequest
+                        .requested.lastName
+                    }}
+                  </h3>
+
+                  <p>
+                    {{
+                      roommateRequest
+                        .academicYear
+                    }}
+                    · Pending response
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="danger-button small-button"
+                  [disabled]="
+                    actingRequestId()
+                      !== null
+                  "
+                  (click)="
+                    cancelRequest(
+                      roommateRequest
+                    )
+                  "
+                >
+                  {{
+                    actingRequestId()
+                      === roommateRequest.id
+                      ? 'Working...'
+                      : 'Cancel Request'
+                  }}
+                </button>
+              </article>
+            }
+          </div>
+        }
+      </article>
+    </section>
+
+    @if (
+      requestHistory().length > 0
+    ) {
+      <section class="card">
+        <header class="section-header compact-header">
+          <div>
+            <p class="section-label">
+              History
+            </p>
+
+            <h2>Previous Requests</h2>
+          </div>
+        </header>
+
+        <div class="request-list">
+          @for (
+            roommateRequest
+              of requestHistory();
+            track roommateRequest.id
+          ) {
+            <article class="request-row">
+              <div>
+                <h3>
+                  {{
+                    otherStudent(
+                      roommateRequest
+                    ).firstName
+                  }}
+                  {{
+                    otherStudent(
+                      roommateRequest
+                    ).lastName
+                  }}
+                </h3>
+
+                <p>
+                  {{
+                    roommateRequest
+                      .academicYear
+                  }}
+                </p>
+              </div>
+
+              <span
+                class="status-badge"
+                [attr.data-status]="
+                  roommateRequest.status
+                "
+              >
+                {{
+                  statusLabel(
+                    roommateRequest
+                  )
+                }}
+              </span>
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+</section>

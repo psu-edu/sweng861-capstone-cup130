@@ -1,0 +1,356 @@
+.page {
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.eyebrow,
+.section-label {
+  color: var(--color-blue-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p,
+.section-header p,
+.information-card p,
+.request-row p,
+.empty-text {
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.roommate-nav {
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.roommate-nav a {
+  border-bottom: 3px solid transparent;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+}
+
+.roommate-nav a:hover,
+.roommate-nav a.active {
+  border-bottom-color: var(--color-blue);
+  color: var(--color-blue-dark);
+}
+
+.card,
+.information-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
+}
+
+.card {
+  margin-bottom: 1.25rem;
+}
+
+.information-card {
+  background: var(--color-blue-light);
+  border-color: #bfdbfe;
+  margin-bottom: 1.25rem;
+}
+
+.information-card p {
+  margin-bottom: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.text-link {
+  color: var(--color-blue-dark);
+  font-weight: 600;
+}
+
+.section-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.section-header h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0;
+}
+
+.section-header > p {
+  margin-bottom: 0;
+}
+
+.compact-header {
+  margin-bottom: 0.75rem;
+}
+
+.search-controls {
+  align-items: flex-end;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns:
+    180px minmax(0, 1fr) auto;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.form-field input,
+.form-field select {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  font: inherit;
+  padding: 0.7rem 0.75rem;
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  border-color: var(--color-blue);
+  outline: 2px solid var(--color-blue-light);
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  border-radius: var(--radius-small);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.7rem 1rem;
+}
+
+.primary-button {
+  background: var(--color-blue);
+  border: 1px solid var(--color-blue);
+  color: var(--color-white);
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--color-blue-dark);
+}
+
+.secondary-button {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  color: var(--color-blue-dark);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--color-background);
+}
+
+.danger-button {
+  background: var(--color-white);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.danger-button:hover:not(:disabled) {
+  background: var(--color-danger-background);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.search-button {
+  min-height: 42px;
+}
+
+.search-results {
+  border-top: 1px solid var(--color-border);
+  margin-top: 1.25rem;
+}
+
+.student-result {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem 0;
+}
+
+.student-result + .student-result {
+  border-top: 1px solid var(--color-border);
+}
+
+.student-result h3,
+.request-row h3 {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.student-number,
+.academic-context {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.academic-context {
+  margin-top: 0.25rem;
+}
+
+.empty-inline {
+  background: var(--color-background);
+  border-radius: var(--radius-small);
+  color: var(--color-text-muted);
+  margin-top: 1.25rem;
+  padding: 1rem;
+}
+
+.request-columns {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.request-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.request-row {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.9rem 0;
+}
+
+.request-row + .request-row {
+  border-top: 1px solid var(--color-border);
+}
+
+.request-row p {
+  font-size: 0.85rem;
+  margin-bottom: 0;
+  margin-top: 0.2rem;
+}
+
+.stacked-row {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.small-button {
+  font-size: 0.85rem;
+  padding: 0.55rem 0.75rem;
+}
+
+.status-badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+}
+
+.status-badge[data-status="PENDING"] {
+  background: var(--color-warning-background);
+  color: var(--color-warning);
+}
+
+.status-badge[data-status="ACCEPTED"] {
+  background: var(--color-success-background);
+  color: var(--color-success);
+}
+
+.status-badge[data-status="DECLINED"],
+.status-badge[data-status="CANCELLED"] {
+  background: var(--color-danger-background);
+  color: var(--color-danger);
+}
+
+.page-message {
+  border-radius: var(--radius-small);
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.success-message {
+  background: var(--color-success-background);
+  color: var(--color-success);
+}
+
+.error-message {
+  background: var(--color-danger-background);
+  color: var(--color-danger);
+}
+
+.empty-text {
+  margin-bottom: 0;
+}
+
+@media (max-width: 850px) {
+  .search-controls,
+  .request-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .search-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 650px) {
+  .roommate-nav {
+    overflow-x: auto;
+  }
+
+  .roommate-nav a {
+    white-space: nowrap;
+  }
+
+  .student-result,
+  .request-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .student-result button,
+  .row-actions {
+    width: 100%;
+  }
+
+  .row-actions button {
+    flex: 1;
+  }
+}

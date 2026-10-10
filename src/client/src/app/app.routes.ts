@@ -8,6 +8,9 @@ import { HousingInventoryPage } from './pages/housing-inventory/housing-inventor
 import { HousingOptionsPage } from './pages/housing-options/housing-options';
 import { Login } from './pages/login/login';
 import { Placeholder } from './pages/placeholder/placeholder';
+import {RoommateMatchingPage} from './pages/roommate-matching/roommate-matching';
+import {RoommateProfilePage} from './pages/roommate-profile/roommate-profile';
+import {RoommateRequestsPage} from './pages/roommate-requests/roommate-requests';
 import { StudentApplicationPage } from './pages/student-application/student-application';
 import { StudentProfilePage } from './pages/student-profile/student-profile';
 
@@ -44,28 +47,33 @@ export const routes: Routes = [
       {
         path: 'housing',
         component: Placeholder,
+
         data: {
-          title: 'My Housing',
+          title:
+            'My Housing',
+
           description:
             'View your assigned university housing.',
         },
       },
       {
-        path: 'roommates',
-        component: Placeholder,
-        data: {
-          title: 'Roommates',
-          description:
-            'Manage direct roommate requests and roommate matching.',
-        },
+        path: 'roommates/profile',
+        component: RoommateProfilePage,
+      },
+      {
+        path:'roommates/requests',
+        component: RoommateRequestsPage,
+      },
+      {
+        path:'roommates',
+        component: RoommateMatchingPage,
       },
       {
         path: 'lease',
         component: Placeholder,
         data: {
           title: 'My Lease',
-          description:
-            'Review your housing lease and signature status.',
+          description: 'Review your housing lease and signature status.',
         },
       },
       {
@@ -74,16 +82,14 @@ export const routes: Routes = [
       },
       {
         path: 'applications',
-        component:
-          HousingApplicationsPage,
+        component: HousingApplicationsPage,
       },
       {
         path: 'assignments',
         component: Placeholder,
         data: {
           title: 'Assignments',
-          description:
-            'Manage student housing assignments.',
+          description: 'Manage student housing assignments.',
         },
       },
       {

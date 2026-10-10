@@ -226,17 +226,26 @@
           <p>
             Your application has been approved.
             You can review your housing
-            preferences while the remaining
-            roommate and assignment steps are
-            completed.
+            preferences and roommate options
+            before the Housing Office makes the
+            final room and bed assignment.
           </p>
 
-          <a
-            class="secondary-link"
-            routerLink="/housing-preferences"
-          >
-            Review Housing Preferences
-          </a>
+          <div class="next-step-actions">
+            <a
+              class="secondary-link"
+              routerLink="/housing-preferences"
+            >
+              Review Housing Preferences
+            </a>
+
+            <a
+              class="primary-link"
+              routerLink="/roommates"
+            >
+              Roommate Options
+            </a>
+          </div>
         }
 
         @case ('HOUSING_ASSIGNED') {

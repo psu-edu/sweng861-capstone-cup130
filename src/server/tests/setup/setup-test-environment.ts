@@ -15,3 +15,15 @@ process.env.DATABASE_PASSWORD = testDatabase.password;
 process.env.AUTH0_DOMAIN = 'test.auth0.invalid';
 
 process.env.AUTH0_AUDIENCE = 'https://api.campus-rental.test';
+
+process.env.AI_PROVIDER = 'mock';
+
+process.env.AI_BASE_URL = '';
+
+process.env.AI_MODEL = '';
+
+process.env.AI_API_KEY = '';
+
+process.env.AI_MAX_TOKENS = '200';
+
+process.env.AI_TIMEOUT_MS = '20000';
