@@ -1,0 +1,526 @@
+<section class="page">
+  <header class="page-header">
+    <p class="eyebrow">
+      Student Housing
+    </p>
+
+    <h1>Roommate Matching</h1>
+
+    <p>
+      Request someone you already know or use
+      AI-assisted discovery to review compatible
+      roommate candidates.
+    </p>
+  </header>
+
+  <nav
+    class="roommate-nav"
+    aria-label="Roommate options"
+  >
+    <a
+      routerLink="/roommates"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{
+        exact: true
+      }"
+    >
+      Matching
+    </a>
+
+    <a
+      routerLink="/roommates/profile"
+      routerLinkActive="active"
+    >
+      My Roommate Profile
+    </a>
+
+    <a
+      routerLink="/roommates/requests"
+      routerLinkActive="active"
+    >
+      Requests
+    </a>
+  </nav>
+
+  <div class="information-card">
+    <strong>
+      AI recommendations are advisory.
+    </strong>
+
+    <p>
+      Recommendations help you compare
+      shared-living preferences. They never
+      automatically pair students or make a
+      housing assignment. A roommate request must
+      still be sent and accepted.
+    </p>
+  </div>
+
+  @if (message()) {
+    <div
+      class="page-message success-message"
+      role="status"
+    >
+      {{ message() }}
+    </div>
+  }
+
+  @if (error()) {
+    <div
+      class="page-message error-message"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading roommate options...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="card">
+      <div
+        class="page-message error-message"
+        role="alert"
+      >
+        {{ loadError() }}
+      </div>
+    </div>
+  } @else {
+    <section class="path-grid">
+      <article class="path-card">
+        <p class="section-label">
+          Path 1
+        </p>
+
+        <h2>Request Someone You Know</h2>
+
+        <p>
+          Search by name or student number and
+          send a direct roommate request. The
+          other student must explicitly accept.
+        </p>
+
+        <a
+          routerLink="/roommates/requests"
+          class="primary-link"
+        >
+          Direct Roommate Requests
+        </a>
+      </article>
+
+      <article class="path-card">
+        <p class="section-label">
+          Path 2
+        </p>
+
+        <h2>AI-Assisted Discovery</h2>
+
+        <p>
+          Complete an optional roommate profile
+          and review ranked candidates based on
+          shared-living preferences.
+        </p>
+
+        <a
+          routerLink="/roommates/profile"
+          class="secondary-link"
+        >
+          Review Roommate Profile
+        </a>
+      </article>
+    </section>
+
+    <section class="card matching-controls">
+      <header class="section-header">
+        <div>
+          <p class="section-label">
+            Housing Cycle
+          </p>
+
+          <h2>AI-Assisted Recommendations</h2>
+        </div>
+
+        <p>
+          Recommendations are generated only when
+          you request them so the external AI
+          provider is not called unnecessarily.
+        </p>
+      </header>
+
+      <div class="year-controls">
+        <div class="form-field">
+          <label for="matchingAcademicYear">
+            Academic Year
+          </label>
+
+          <select
+            id="matchingAcademicYear"
+            [formControl]="academicYearControl"
+          >
+            @for (
+              year of academicYears;
+              track year
+            ) {
+              <option [value]="year">
+                {{ year }}
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (
+        acceptedRequest();
+        as accepted
+      ) {
+        <div class="accepted-card">
+          <span
+            class="status-badge accepted-badge"
+          >
+            Accepted Roommate
+          </span>
+
+          <h3>
+            {{
+              accepted.requester.firstName
+            }}
+            {{
+              accepted.requester.lastName
+            }}
+            +
+            {{
+              accepted.requested.firstName
+            }}
+            {{
+              accepted.requested.lastName
+            }}
+          </h3>
+
+          <p>
+            An accepted direct roommate request
+            already exists for
+            {{ accepted.academicYear }}.
+            Direct requests take priority over
+            AI-assisted discovery for this housing
+            cycle.
+          </p>
+
+          <a
+            routerLink="/roommates/requests"
+            class="text-link"
+          >
+            View Roommate Requests
+          </a>
+        </div>
+      } @else if (
+        profile() === null
+      ) {
+        <div class="setup-state">
+          <h3>
+            Complete your roommate profile
+          </h3>
+
+          <p>
+            AI-assisted recommendations require a
+            saved roommate profile and explicit
+            opt-in.
+          </p>
+
+          <a
+            routerLink="/roommates/profile"
+            class="primary-link"
+          >
+            Create Roommate Profile
+          </a>
+        </div>
+      } @else if (
+        !profile()!.optedIn
+      ) {
+        <div class="setup-state">
+          <h3>
+            AI-assisted discovery is off
+          </h3>
+
+          <p>
+            Your roommate profile is saved, but
+            you are not currently opted into
+            AI-assisted discovery.
+          </p>
+
+          <a
+            routerLink="/roommates/profile"
+            class="primary-link"
+          >
+            Update Roommate Profile
+          </a>
+        </div>
+      } @else {
+        <div class="matching-action">
+          <div>
+            <strong>
+              Your roommate profile is active.
+            </strong>
+
+            <p>
+              Campus Rental will first rank
+              eligible candidates using
+              structured preferences, then use AI
+              analysis to help explain the
+              strongest candidates.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="primary-button"
+            [disabled]="
+              loadingRecommendations()
+            "
+            (click)="loadRecommendations()"
+          >
+            {{
+              loadingRecommendations()
+                ? 'Finding Matches...'
+                : 'Find Roommate Matches'
+            }}
+          </button>
+        </div>
+      }
+    </section>
+
+    @if (
+      loadingRecommendations()
+    ) {
+      <section class="card loading-card">
+        <h2>
+          Reviewing roommate compatibility...
+        </h2>
+
+        <p>
+          Structured preferences are ranked first.
+          AI analysis is then used for the
+          strongest eligible candidates.
+        </p>
+      </section>
+    }
+
+    @if (
+      hasLoadedRecommendations()
+      && !loadingRecommendations()
+      && recommendations().length === 0
+      && !error()
+    ) {
+      <section class="card empty-state">
+        <h2>No recommendations available</h2>
+
+        <p>
+          There are no eligible, opted-in roommate
+          candidates available for this academic
+          year right now.
+        </p>
+      </section>
+    }
+
+    @if (
+      recommendations().length > 0
+    ) {
+      <section class="recommendations-section">
+        <header class="recommendations-header">
+          <div>
+            <p class="section-label">
+              Recommendations
+            </p>
+
+            <h2>Roommate Matches</h2>
+          </div>
+
+          <p>
+            Review the similarities and
+            differences before deciding whether
+            to send a request.
+          </p>
+        </header>
+
+        <div class="recommendation-grid">
+          @for (
+            recommendation
+              of recommendations();
+            track recommendation
+              .candidate.studentId
+          ) {
+            <article class="match-card">
+              <header class="match-header">
+                <div>
+                  <h3>
+                    {{
+                      recommendation
+                        .candidate.firstName
+                    }}
+                    {{
+                      recommendation
+                        .candidate.lastName
+                    }}
+                  </h3>
+
+                  <p class="student-number">
+                    {{
+                      recommendation
+                        .candidate.studentNumber
+                    }}
+                  </p>
+                </div>
+
+                <div class="score-block">
+                  <strong>
+                    {{
+                      recommendation
+                        .compatibilityScore
+                    }}%
+                  </strong>
+
+                  <span>
+                    {{
+                      categoryLabel(
+                        recommendation
+                          .compatibilityCategory
+                      )
+                    }}
+                  </span>
+                </div>
+              </header>
+
+              <div class="academic-context">
+                <span>
+                  {{
+                    academicStatusLabel(
+                      recommendation
+                        .candidate
+                    )
+                  }}
+                </span>
+
+                <span>
+                  {{
+                    recommendation
+                      .candidate.major
+                  }}
+                </span>
+
+                <span>
+                  {{
+                    graduationLabel(
+                      recommendation
+                        .candidate
+                    )
+                  }}
+                </span>
+              </div>
+
+              <div class="analysis-grid">
+                <section>
+                  <h4>Compatibility Strengths</h4>
+
+                  @if (
+                    recommendation
+                      .strengths.length
+                      === 0
+                  ) {
+                    <p>
+                      No major similarities were
+                      highlighted.
+                    </p>
+                  } @else {
+                    <ul>
+                      @for (
+                        strength
+                          of recommendation
+                            .strengths;
+                        track strength
+                      ) {
+                        <li>
+                          {{ strength }}
+                        </li>
+                      }
+                    </ul>
+                  }
+                </section>
+
+                <section>
+                  <h4>Notable Differences</h4>
+
+                  @if (
+                    recommendation
+                      .differences.length
+                      === 0
+                  ) {
+                    <p>
+                      No major differences were
+                      highlighted.
+                    </p>
+                  } @else {
+                    <ul>
+                      @for (
+                        difference
+                          of recommendation
+                            .differences;
+                        track difference
+                      ) {
+                        <li>
+                          {{ difference }}
+                        </li>
+                      }
+                    </ul>
+                  }
+                </section>
+              </div>
+
+              <div class="explanation">
+                <strong>
+                  Why this recommendation
+                </strong>
+
+                <p>
+                  {{
+                    recommendation
+                      .explanation
+                  }}
+                </p>
+              </div>
+
+              <footer class="match-actions">
+                <span class="advisory-note">
+                  Sending a request does not pair
+                  you automatically.
+                </span>
+
+                <button
+                  type="button"
+                  class="primary-button"
+                  [disabled]="
+                    sendingCandidateId()
+                      !== null
+                  "
+                  (click)="
+                    sendRequest(
+                      recommendation
+                    )
+                  "
+                >
+                  {{
+                    sendingCandidateId()
+                      === recommendation
+                        .candidate.studentId
+                      ? 'Sending...'
+                      : 'Send Roommate Request'
+                  }}
+                </button>
+              </footer>
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+</section>

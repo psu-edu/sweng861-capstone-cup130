@@ -1,0 +1,479 @@
+.page {
+  margin: 0 auto;
+  max-width: 1150px;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.eyebrow,
+.section-label {
+  color: var(--color-blue-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p,
+.path-card p,
+.section-header p,
+.matching-action p,
+.loading-card p,
+.empty-state p,
+.accepted-card p,
+.setup-state p,
+.recommendations-header p {
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.roommate-nav {
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.roommate-nav a {
+  border-bottom: 3px solid transparent;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+}
+
+.roommate-nav a:hover,
+.roommate-nav a.active {
+  border-bottom-color: var(--color-blue);
+  color: var(--color-blue-dark);
+}
+
+.card,
+.path-card,
+.match-card,
+.information-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-card);
+}
+
+.card,
+.path-card,
+.information-card {
+  padding: 1.5rem;
+}
+
+.card {
+  margin-bottom: 1.25rem;
+}
+
+.information-card {
+  background: var(--color-blue-light);
+  border-color: #bfdbfe;
+  margin-bottom: 1.25rem;
+}
+
+.information-card p {
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin-bottom: 0;
+  margin-top: 0.5rem;
+}
+
+.path-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  margin-bottom: 1.25rem;
+}
+
+.path-card h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.path-card p {
+  min-height: 72px;
+}
+
+.primary-link,
+.secondary-link {
+  border-radius: var(--radius-small);
+  display: inline-block;
+  font-weight: 600;
+  padding: 0.7rem 1rem;
+  text-decoration: none;
+}
+
+.primary-link {
+  background: var(--color-blue);
+  color: var(--color-white);
+}
+
+.primary-link:hover {
+  background: var(--color-blue-dark);
+}
+
+.secondary-link {
+  border: 1px solid var(--color-border);
+  color: var(--color-blue-dark);
+}
+
+.secondary-link:hover {
+  background: var(--color-background);
+}
+
+.section-header,
+.recommendations-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+}
+
+.section-header {
+  margin-bottom: 1.25rem;
+}
+
+.section-header h2,
+.recommendations-header h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0;
+}
+
+.section-header > p,
+.recommendations-header > p {
+  margin-bottom: 0;
+  max-width: 480px;
+}
+
+.year-controls {
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 240px;
+}
+
+.form-field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.form-field select {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  font: inherit;
+  padding: 0.7rem 0.75rem;
+}
+
+.form-field select:focus {
+  border-color: var(--color-blue);
+  outline: 2px solid var(--color-blue-light);
+}
+
+.accepted-card,
+.setup-state {
+  background: var(--color-background);
+  border-radius: var(--radius-small);
+  padding: 1.25rem;
+}
+
+.accepted-card h3,
+.setup-state h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.accepted-card p,
+.setup-state p {
+  margin-bottom: 0.75rem;
+}
+
+.accepted-badge {
+  background: var(--color-success-background);
+  color: var(--color-success);
+}
+
+.status-badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+}
+
+.text-link {
+  color: var(--color-blue-dark);
+  font-weight: 600;
+}
+
+.matching-action {
+  align-items: center;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+}
+
+.matching-action p {
+  margin-bottom: 0;
+  margin-top: 0.35rem;
+  max-width: 700px;
+}
+
+.primary-button {
+  background: var(--color-blue);
+  border: 0;
+  border-radius: var(--radius-small);
+  color: var(--color-white);
+  cursor: pointer;
+  flex-shrink: 0;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--color-blue-dark);
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.loading-card h2,
+.empty-state h2 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.loading-card p,
+.empty-state p {
+  margin-bottom: 0;
+}
+
+.recommendations-section {
+  margin-top: 2rem;
+}
+
+.recommendations-header {
+  margin-bottom: 1rem;
+}
+
+.recommendation-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.match-card {
+  overflow: hidden;
+}
+
+.match-header {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1.5rem;
+}
+
+.match-header h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.2rem;
+}
+
+.student-number {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.score-block {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+}
+
+.score-block strong {
+  color: var(--color-blue-dark);
+  font-size: 1.8rem;
+}
+
+.score-block span {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.academic-context {
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding: 0.8rem 1.5rem;
+}
+
+.academic-context span {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.academic-context span + span::before {
+  content: "·";
+  margin-right: 0.6rem;
+}
+
+.analysis-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  padding: 1.5rem;
+}
+
+.analysis-grid h4 {
+  font-size: 0.95rem;
+  margin-bottom: 0.6rem;
+}
+
+.analysis-grid p,
+.analysis-grid li {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.analysis-grid p {
+  margin-bottom: 0;
+}
+
+.analysis-grid ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.analysis-grid li + li {
+  margin-top: 0.35rem;
+}
+
+.explanation {
+  border-top: 1px solid var(--color-border);
+  padding: 1.25rem 1.5rem;
+}
+
+.explanation strong {
+  font-size: 0.9rem;
+}
+
+.explanation p {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin-bottom: 0;
+  margin-top: 0.35rem;
+}
+
+.match-actions {
+  align-items: center;
+  background: var(--color-background);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+}
+
+.advisory-note {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.page-message {
+  border-radius: var(--radius-small);
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.success-message {
+  background: var(--color-success-background);
+  color: var(--color-success);
+}
+
+.error-message {
+  background: var(--color-danger-background);
+  color: var(--color-danger);
+}
+
+@media (max-width: 800px) {
+  .path-grid,
+  .analysis-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header,
+  .recommendations-header,
+  .matching-action,
+  .match-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .path-card p {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 650px) {
+  .roommate-nav {
+    overflow-x: auto;
+  }
+
+  .roommate-nav a {
+    white-space: nowrap;
+  }
+
+  .match-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .score-block {
+    align-items: flex-start;
+  }
+
+  .academic-context {
+    flex-direction: column;
+  }
+
+  .academic-context span + span::before {
+    content: none;
+  }
+
+  .primary-button,
+  .primary-link,
+  .secondary-link {
+    text-align: center;
+    width: 100%;
+  }
+}

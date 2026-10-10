@@ -1,0 +1,378 @@
+<section class="page">
+  <header class="page-header">
+    <p class="eyebrow">
+      Roommate Options
+    </p>
+
+    <h1>Roommate Profile</h1>
+
+    <p>
+      Describe your shared-living preferences for
+      AI-assisted roommate discovery.
+    </p>
+  </header>
+
+  <nav
+    class="roommate-nav"
+    aria-label="Roommate options"
+  >
+    <a
+      routerLink="/roommates"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{
+        exact: true
+      }"
+    >
+      Matching
+    </a>
+
+    <a
+      routerLink="/roommates/profile"
+      routerLinkActive="active"
+    >
+      My Roommate Profile
+    </a>
+
+    <a
+      routerLink="/roommates/requests"
+      routerLinkActive="active"
+    >
+      Requests
+    </a>
+  </nav>
+
+  <div class="information-card">
+    <strong>
+      Your roommate profile is optional.
+    </strong>
+
+    <p>
+      Turning on AI-assisted discovery allows
+      Campus Rental to compare these roommate
+      preferences with other opted-in students.
+      Direct roommate requests remain available
+      even when AI discovery is turned off.
+    </p>
+
+    <p>
+      Roommate eligibility also requires your
+      Student Profile gender to be set to Male or
+      Female. Eligibility is handled separately
+      from the compatibility score.
+    </p>
+
+    <a
+      routerLink="/profile"
+      class="text-link"
+    >
+      Review My Student Profile
+    </a>
+  </div>
+
+  @if (message()) {
+    <div
+      class="page-message success-message"
+      role="status"
+    >
+      {{ message() }}
+    </div>
+  }
+
+  @if (error()) {
+    <div
+      class="page-message error-message"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading roommate profile...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="card">
+      <div
+        class="page-message error-message"
+        role="alert"
+      >
+        {{ loadError() }}
+      </div>
+    </div>
+  } @else {
+    <form
+      class="profile-form"
+      [formGroup]="form"
+      (ngSubmit)="save()"
+    >
+      <section class="card opt-in-card">
+        <div>
+          <p class="section-label">
+            AI-Assisted Discovery
+          </p>
+
+          <h2>
+            Include me in roommate recommendations
+          </h2>
+
+          <p>
+            When enabled, other eligible,
+            opted-in students may be considered
+            with you for AI-assisted roommate
+            recommendations.
+          </p>
+        </div>
+
+        <label class="toggle-control">
+          <input
+            type="checkbox"
+            formControlName="optedIn"
+          />
+
+          <span>
+            Opt in to AI-assisted discovery
+          </span>
+        </label>
+      </section>
+
+      <section class="card">
+        <header class="section-header">
+          <div>
+            <p class="section-label">
+              Lifestyle Preferences
+            </p>
+
+            <h2>
+              Shared-living preferences
+            </h2>
+          </div>
+
+          <p>
+            Use the 1–5 scale for each area. The
+            descriptions show what the endpoints
+            mean.
+          </p>
+        </header>
+
+        <div class="preference-grid">
+          @for (
+            field of preferenceFields;
+            track field.control
+          ) {
+            <div class="form-field">
+              <label
+                [for]="field.control"
+              >
+                {{ field.label }}
+              </label>
+
+              <select
+                [id]="field.control"
+                [formControl]="
+                  preferenceControl(
+                    field.control
+                  )
+                "
+              >
+                @for (
+                  value of scaleValues;
+                  track value
+                ) {
+                  <option
+                    [ngValue]="value"
+                  >
+                    {{ value }}
+                  </option>
+                }
+              </select>
+
+              <span class="field-help">
+                1 = {{ field.lowLabel }}
+                ·
+                5 = {{ field.highLabel }}
+              </span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="section-header">
+          <div>
+            <p class="section-label">
+              Top Priorities
+            </p>
+
+            <h2>
+              What matters most?
+            </h2>
+          </div>
+
+          <p>
+            Choose up to three different
+            preferences. Higher priorities have
+            more influence on the structured
+            compatibility score.
+          </p>
+        </header>
+
+        <div class="priority-grid">
+          <div class="form-field">
+            <label for="priority1">
+              Priority 1
+            </label>
+
+            <select
+              id="priority1"
+              formControlName="priority1"
+            >
+              <option [ngValue]="null">
+                No priority selected
+              </option>
+
+              @for (
+                option of priorityOptions;
+                track option.value
+              ) {
+                <option
+                  [ngValue]="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="priority2">
+              Priority 2
+            </label>
+
+            <select
+              id="priority2"
+              formControlName="priority2"
+            >
+              <option [ngValue]="null">
+                No priority selected
+              </option>
+
+              @for (
+                option of priorityOptions;
+                track option.value
+              ) {
+                <option
+                  [ngValue]="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="priority3">
+              Priority 3
+            </label>
+
+            <select
+              id="priority3"
+              formControlName="priority3"
+            >
+              <option [ngValue]="null">
+                No priority selected
+              </option>
+
+              @for (
+                option of priorityOptions;
+                track option.value
+              ) {
+                <option
+                  [ngValue]="option.value"
+                >
+                  {{ option.label }}
+                </option>
+              }
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <header class="section-header">
+          <div>
+            <p class="section-label">
+              About You
+            </p>
+
+            <h2>
+              Roommate profile details
+            </h2>
+          </div>
+
+          <p>
+            These optional fields provide
+            additional roommate-lifestyle context
+            for semantic compatibility analysis.
+          </p>
+        </header>
+
+        <div class="text-grid">
+          <div class="form-field">
+            <label for="aboutMe">
+              About Me
+            </label>
+
+            <textarea
+              id="aboutMe"
+              rows="6"
+              formControlName="aboutMe"
+              placeholder="Describe your living habits, routine, or what sharing a room with you is like."
+            ></textarea>
+          </div>
+
+          <div class="form-field">
+            <label for="lookingFor">
+              What I Am Looking For
+            </label>
+
+            <textarea
+              id="lookingFor"
+              rows="6"
+              formControlName="lookingFor"
+              placeholder="Describe the roommate habits or shared-living expectations that matter to you."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="privacy-note">
+          AI analysis is used to assist with
+          roommate recommendations. Eligibility
+          rules and final roommate consent remain
+          separate from AI scoring.
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <a
+          routerLink="/roommates"
+          class="secondary-link"
+        >
+          Back to Matching
+        </a>
+
+        <button
+          type="submit"
+          class="primary-button"
+          [disabled]="saving()"
+        >
+          {{
+            saving()
+              ? 'Saving...'
+              : 'Save Roommate Profile'
+          }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

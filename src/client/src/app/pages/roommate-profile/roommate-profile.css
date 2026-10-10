@@ -1,0 +1,303 @@
+.page {
+  margin: 0 auto;
+  max-width: 1100px;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.eyebrow,
+.section-label {
+  color: var(--color-blue-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p,
+.section-header p,
+.opt-in-card p,
+.information-card p {
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.roommate-nav {
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.roommate-nav a {
+  border-bottom: 3px solid transparent;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+}
+
+.roommate-nav a:hover,
+.roommate-nav a.active {
+  border-bottom-color: var(--color-blue);
+  color: var(--color-blue-dark);
+}
+
+.card,
+.information-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-medium);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
+}
+
+.card {
+  margin-bottom: 1.25rem;
+}
+
+.information-card {
+  background: var(--color-blue-light);
+  border-color: #bfdbfe;
+  margin-bottom: 1.25rem;
+}
+
+.information-card p {
+  margin-bottom: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.information-card p:last-of-type {
+  margin-bottom: 0.75rem;
+}
+
+.text-link {
+  color: var(--color-blue-dark);
+  font-weight: 600;
+}
+
+.opt-in-card {
+  align-items: center;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+}
+
+.opt-in-card h2,
+.section-header h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.4rem;
+}
+
+.opt-in-card p {
+  margin-bottom: 0;
+  max-width: 720px;
+}
+
+.toggle-control {
+  align-items: center;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  gap: 0.6rem;
+  padding: 0.8rem 1rem;
+}
+
+.toggle-control input {
+  height: 18px;
+  width: 18px;
+}
+
+.section-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 2rem;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.section-header > p {
+  margin-bottom: 0;
+  max-width: 450px;
+}
+
+.preference-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+}
+
+.priority-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+}
+
+.text-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.form-field select,
+.form-field textarea {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  font: inherit;
+  padding: 0.7rem 0.75rem;
+}
+
+.form-field textarea {
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.form-field select:focus,
+.form-field textarea:focus {
+  border-color: var(--color-blue);
+  outline: 2px solid var(--color-blue-light);
+}
+
+.field-help {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.privacy-note {
+  background: var(--color-background);
+  border-radius: var(--radius-small);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem;
+}
+
+.page-message {
+  border-radius: var(--radius-small);
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.success-message {
+  background: var(--color-success-background);
+  color: var(--color-success);
+}
+
+.error-message {
+  background: var(--color-danger-background);
+  color: var(--color-danger);
+}
+
+.form-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.primary-button,
+.secondary-link {
+  border-radius: var(--radius-small);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+}
+
+.primary-button {
+  background: var(--color-blue);
+  border: 0;
+  color: var(--color-white);
+  cursor: pointer;
+  font: inherit;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--color-blue-dark);
+}
+
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.secondary-link {
+  border: 1px solid var(--color-border);
+  color: var(--color-blue-dark);
+  text-decoration: none;
+}
+
+.secondary-link:hover {
+  background: var(--color-background);
+}
+
+@media (max-width: 900px) {
+  .preference-grid,
+  .priority-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .section-header,
+  .opt-in-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 650px) {
+  .roommate-nav {
+    overflow-x: auto;
+  }
+
+  .roommate-nav a {
+    white-space: nowrap;
+  }
+
+  .preference-grid,
+  .priority-grid,
+  .text-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .primary-button,
+  .secondary-link {
+    text-align: center;
+    width: 100%;
+  }
+}
