@@ -8,17 +8,17 @@
 
 Campus Rental is a full-stack university housing application being developed for the SWENG 861 Course Capstone Project.
 
-The application is designed around two primary users: Students and Housing Officers. Students can manage a housing application, submit residence hall and room-style preferences, and track the status of their application. Future workflow steps will allow Students to request a known roommate or participate in AI-assisted roommate matching, receive a housing assignment, and complete the lease-signing process.
+The application is designed around two primary users: Students and Housing Officers. Students can manage a housing application, submit residence hall and room-style preferences, request a known roommate or participate in AI-assisted roommate matching, and track the status of their housing workflow. Later workflow steps will allow Students to receive a housing assignment and complete the lease-signing process.
 
 Housing Officers manage residence hall inventory, review student applications and housing preferences, maintain private application notes, approve applications, and will eventually use roommate information to make final room and bed assignments and manage the leasing workflow.
 
 Students do not directly claim a specific room or bed. Instead, they submit housing preferences and Housing Officers make the final assignment based on available inventory and roommate information. Database constraints and backend transactions protect the assignment process from conflicting bed reservations.
 
-AI-assisted roommate matching is also part of the planned capstone functionality. The AI feature will provide explainable roommate recommendations but will not automatically pair students or make housing assignments.
+AI-assisted roommate matching provides ranked, explainable roommate recommendations based primarily on structured lifestyle preferences with a smaller semantic free-text component. Recommendations are advisory and never automatically pair students or make housing assignments. Students must still send and accept a roommate request before a roommate pair is established.
 
 ## Project Status
 
-The project currently includes the backend, database, Angular frontend, authentication and authorization foundation, Student Profile workflow, housing inventory management, and the housing application and preference workflow.
+The project currently includes the backend, database, Angular frontend, authentication and authorization foundation, Student Profile workflow, housing inventory management, housing applications and preferences, direct roommate requests, and AI-assisted roommate matching.
 
 Currently implemented:
 
@@ -77,12 +77,31 @@ Currently implemented:
 - Backend enforcement of housing application lifecycle rules
 - Protection against multiple unsecured housing applications for the same Student
 - Student API responses that exclude Housing Officer-only notes and audit information
-- Validation and user-friendly application and inventory API errors
+- Roommate Profile repository, service, controller, and API routes
+- Twelve structured roommate lifestyle preferences with three optional weighted priorities
+- Optional About Me and Looking For roommate profile text
+- Student opt-in and opt-out for AI-assisted roommate discovery
+- Same-gender roommate eligibility enforced by the backend
+- Direct Student roommate search by name or student number
+- Direct roommate request lifecycle with pending, accepted, declined, and cancelled states
+- Mutual consent required before a roommate request becomes accepted
+- Accepted direct roommate requests take priority over AI-assisted discovery for the same academic year
+- AI compatibility provider abstraction with deterministic mock and remote OpenAI-compatible implementations
+- Deterministic structured roommate compatibility scoring
+- AI-assisted semantic compatibility analysis and concise explanations
+- Combined compatibility percentage, category, strengths, and notable differences
+- Remote AI fallback to the deterministic provider when the configured service is unavailable
+- Candidate pre-ranking that limits AI analysis to the five strongest structured matches
+- Gender and protected or sensitive characteristics excluded from AI compatibility scoring
+- Roommate Matching, Roommate Profile, and Roommate Requests Angular screens
+- AI recommendations remain advisory and never automatically create roommate requests or housing assignments
+- Validation and user-friendly application, inventory, and roommate API errors
 - Backend integration testing with Vitest and PostgreSQL
 - Supertest API integration testing
+- Unit testing for compatibility scoring and AI providers
 - Consolidated backend and frontend verification commands
 
-Direct roommate requests, AI-assisted roommate matching, final housing assignment, lease processing, and the remaining end-to-end workflow are planned for later feature branches.
+Final housing assignment, lease processing, and the remaining end-to-end workflow are planned for later feature branches.
 
 ## Repository Structure
 
@@ -118,6 +137,9 @@ The repository is organized so frontend, backend, infrastructure, project docume
 │   │   │   │   │   ├── housing-options/        # Student housing availability and preference selection
 │   │   │   │   │   ├── login/                  # Public login and Auth0 entry page
 │   │   │   │   │   ├── placeholder/            # Temporary screens for future roadmap features
+│   │   │   │   │   ├── roommate-matching/      # AI-assisted roommate recommendations
+│   │   │   │   │   ├── roommate-profile/       # Roommate lifestyle profile and AI opt-in
+│   │   │   │   │   ├── roommate-requests/      # Direct roommate search and request management
 │   │   │   │   │   ├── student-application/    # Student application status and lifecycle view
 │   │   │   │   │   └── student-profile/        # Student Profile view and editing
 │   │   │   │   │
@@ -149,6 +171,7 @@ The repository is organized so frontend, backend, infrastructure, project docume
 │       │   ├── modules/              # Domain-focused backend modules
 │       │   │   ├── housing-application/  # Application lifecycle, preferences, approval, and notes
 │       │   │   ├── housing-inventory/    # Building, Room, Bed, availability, and housing options
+│       │   │   ├── roommate-matching/    # Direct roommate requests and AI-assisted matching
 │       │   │   └── student-profile/      # Student Profile retrieval and editing
 │       │   │
 │       │   ├── app.ts                # Express application and route registration
@@ -156,7 +179,8 @@ The repository is organized so frontend, backend, infrastructure, project docume
 │       │
 │       ├── tests/
 │       │   ├── integration/          # PostgreSQL and Express API integration tests
-│       │   └── setup/                # Shared Vitest/test-database setup and utilities
+│       │   ├── setup/                # Shared Vitest/test-database setup and utilities
+│       │   └── unit/                 # Compatibility-scoring and AI-provider unit tests
 │       │
 │       ├── eslint.config.js          # Backend ESLint configuration
 │       ├── package.json              # Backend dependencies and npm scripts
@@ -184,7 +208,7 @@ Campus Rental currently uses:
 - **Schema Management:** Explicit versioned SQL migrations
 - **Authentication:** Auth0 Universal Login
 - **Authorization:** Local Campus Rental role-based authorization
-- **Testing:** Vitest, PostgreSQL integration tests, and Supertest
+- **Testing:** Vitest, PostgreSQL integration tests, Supertest, and Angular testing
 - **AI Integration:** AI-assisted roommate compatibility behind a provider abstraction
 - **Electronic Signature:** DocuSign behind an electronic-signature provider abstraction
 - **Containerization:** Docker and Docker Compose
@@ -233,6 +257,12 @@ POSTGRES_HOST_PORT
 POSTGRES_TEST_DB
 AUTH0_DOMAIN
 AUTH0_AUDIENCE
+AI_PROVIDER
+AI_BASE_URL
+AI_MODEL
+AI_API_KEY
+AI_MAX_TOKENS
+AI_TIMEOUT_MS
 ```
 
 `AUTH0_DOMAIN` should contain the Auth0 tenant domain without `https://`.
@@ -250,6 +280,37 @@ https://api.campus-rental.local
 ```
 
 The automated integration tests use a dedicated PostgreSQL test database. If `POSTGRES_TEST_DB` is omitted, the test configuration defaults to `<POSTGRES_DB>_test`.
+
+### AI Roommate Matching Configuration
+
+Campus Rental supports a deterministic mock compatibility provider and a remote OpenAI-compatible AI provider.
+
+For normal development, automated testing, and a repeatable demonstration:
+
+```text
+AI_PROVIDER=mock
+```
+
+The mock provider is deterministic and does not require an external service or API key.
+
+To use a configured remote provider:
+
+```text
+AI_PROVIDER=remote
+AI_BASE_URL=<OpenAI-compatible base URL>
+AI_MODEL=<model name>
+AI_API_KEY=<local API key>
+AI_MAX_TOKENS=200
+AI_TIMEOUT_MS=20000
+```
+
+The current Penn State DRIFT endpoint and model are represented in `.env.example`. A real API key belongs only in the local `.env` file and must never be committed.
+
+When the remote provider is selected, Campus Rental uses the configured OpenAI-compatible `/v1/chat/completions` endpoint. If the remote provider cannot be used or a request fails, the application falls back to the deterministic provider so the roommate workflow can continue.
+
+The course-provided DRIFT endpoint currently uses HTTP rather than HTTPS. This means credentials and profile text sent to that endpoint are not protected by TLS during transport. Campus Rental treats this as a limitation of the provided course service rather than adding unrelated infrastructure to the project.
+
+The AI provider receives only the About Me and Looking For text needed for semantic analysis. Gender, Student number, academic information, and the structured roommate preference values are not sent to the AI provider.
 
 ## Auth0 Configuration
 
@@ -338,12 +399,17 @@ These placeholders allow the database seed to remain independent of a specific A
 
 To authenticate seeded users through Auth0, create corresponding users in the Auth0 database connection and then map their Auth0 User IDs to the seeded Campus Rental records.
 
-For the current development flow, useful demo identities are:
+Useful demo identities include:
 
 ```text
 alex.morgan@campusrental.test
+jordan.lee@campusrental.test
+taylor.brooks@campusrental.test
+casey.nguyen@campusrental.test
 housing.officer@campusrental.test
 ```
+
+Alex Morgan and Jordan Lee are seeded as male Students. Taylor Brooks and Casey Nguyen are seeded as female Students. These accounts provide two same-gender Student pairs for manually verifying roommate eligibility and mutual roommate requests.
 
 Keep demo passwords outside the repository.
 
@@ -364,6 +430,8 @@ SET
   updated_at = NOW()
 WHERE email = 'housing.officer@campusrental.test';
 ```
+
+The other seeded Student identities can be mapped using the same pattern.
 
 An Auth0 database user ID normally begins with:
 
@@ -504,6 +572,8 @@ Run lint, tests, and the production build together:
 ```powershell
 npm run verify
 ```
+
+Angular production builds currently report bundle and component-style budget warnings. These warnings do not fail the build. They are being retained for later frontend hardening rather than increasing the configured budgets simply to hide them.
 
 ## Authentication and Application APIs
 
@@ -808,6 +878,88 @@ Approval records both the approval timestamp and the Housing Officer responsible
 
 Cancellation records the cancellation timestamp and the user responsible for the cancellation.
 
+### Student Roommate Matching
+
+The roommate-matching API is restricted to the `STUDENT` role.
+
+Retrieve the authenticated Student's roommate profile:
+
+```text
+GET /api/student/roommates/profile
+```
+
+Create or update the authenticated Student's roommate profile:
+
+```text
+PUT /api/student/roommates/profile
+```
+
+Search for eligible Students by name or student number:
+
+```text
+GET /api/student/roommates/search?q=<search>
+```
+
+Retrieve roommate requests involving the authenticated Student:
+
+```text
+GET /api/student/roommates/requests
+```
+
+Send a roommate request:
+
+```text
+POST /api/student/roommates/requests
+```
+
+Accept, decline, or cancel a request:
+
+```text
+POST /api/student/roommates/requests/:requestId/accept
+POST /api/student/roommates/requests/:requestId/decline
+POST /api/student/roommates/requests/:requestId/cancel
+```
+
+Retrieve AI-assisted recommendations for an academic year:
+
+```text
+GET /api/student/roommates/recommendations?academicYear=YYYY-YYYY
+```
+
+Direct roommate requests do not require AI opt-in. They do require both Students to satisfy the roommate eligibility rules.
+
+Campus Rental currently requires both Students to have the same configured gender, either `MALE` or `FEMALE`. A Student whose gender remains `UNSPECIFIED` must update the Student Profile before participating in roommate matching.
+
+Gender is a deterministic eligibility rule only. It is not included in the compatibility score, sent to the AI provider, or returned as part of the Student roommate recommendation data. The backend also rechecks eligibility when a pending request is accepted so changes made after the request was created cannot bypass the rule.
+
+A direct request begins as `PENDING`. The requested Student may accept or decline it, while the requesting Student may cancel a pending outgoing request. An accepted request cannot be cancelled through the normal pending-request cancellation workflow.
+
+AI-assisted discovery requires a saved roommate profile and explicit opt-in. The roommate profile contains twelve structured lifestyle preferences, up to three priority preferences, and optional About Me and Looking For text.
+
+Structured preferences provide 80% of the final compatibility score. Semantic analysis of the free-text profile fields provides the remaining 20%. Structured compatibility is calculated locally before any remote AI call is made.
+
+Campus Rental first ranks all eligible candidates using the structured score. Only the five strongest candidates continue to semantic AI analysis, which keeps the remote-provider workload small and predictable.
+
+Protected and sensitive characteristics are not part of the compatibility scoring criteria. The semantic-analysis prompt also instructs the remote provider not to infer, score, or mention protected or sensitive traits.
+
+Recommendations include:
+
+```text
+Candidate name
+Academic context
+Compatibility percentage
+Compatibility category
+Major compatibility strengths
+Notable differences
+Short compatibility explanation
+```
+
+Viewing a recommendation does not create a roommate request. A Student must explicitly send a request, and the other Student must accept it before the request becomes an accepted roommate relationship.
+
+An accepted direct roommate request takes priority over AI-assisted recommendations for the same academic year.
+
+Roommate matching does not create a housing assignment. Final room and bed placement remains part of the later Housing Officer assignment workflow.
+
 ## Health Check
 
 The health endpoint is:
@@ -951,7 +1103,7 @@ The `verify` script runs:
 ESLint
 Production TypeScript type checking
 Test TypeScript type checking
-Vitest integration tests
+Vitest unit and integration tests
 Production TypeScript build
 ```
 
@@ -973,6 +1125,21 @@ The automated backend tests currently cover areas including:
 - Inventory role authorization
 - Housing workflow constraints
 - Roommate matching constraints
+- Roommate Profile creation, updating, validation, and opt-out behavior
+- Same-gender roommate eligibility and unspecified-gender rejection
+- Direct roommate search privacy
+- Roommate request creation, acceptance, decline, and cancellation
+- Mutual-consent and request-ownership boundaries
+- Roommate request role authorization
+- Deterministic structured compatibility scoring
+- AI provider mock behavior
+- Generic remote AI provider behavior
+- AI provider fallback behavior
+- AI recommendation ranking
+- AI candidate-limit behavior
+- AI recommendation privacy safeguards
+- Accepted direct-request precedence
+- Verification that AI recommendations do not automatically create roommate requests
 - Deterministic development seed behavior
 - Authenticated local-user resolution
 - Student Profile retrieval and updates
@@ -999,6 +1166,8 @@ The automated backend tests currently cover areas including:
 The authorization tests exercise real Express routes, role middleware, controllers, services, repositories, and the PostgreSQL database while replacing the external Auth0 authentication step with deterministic test identity data.
 
 Real Auth0 authentication is also verified manually during development using the Angular application and API.
+
+The complete roommate workflow has also been manually verified through the Angular application using separate Student Auth0 identities. The manual workflow covers same-gender eligibility, direct request creation and cancellation, AI-assisted discovery, conversion of a recommendation into a pending request, mutual acceptance, accepted-request precedence, and confirmation that roommate matching does not automatically create a housing assignment.
 
 ## Continuous Integration
 
@@ -1056,6 +1225,8 @@ The client proxies:
 ```
 
 to the backend service.
+
+AI provider configuration is passed to the server container through the repository-level `.env` file. The default configuration uses the deterministic mock provider unless `AI_PROVIDER=remote` is explicitly selected.
 
 ### Full Docker Refresh
 
@@ -1132,6 +1303,10 @@ The seed creates fictional development records across the Campus Rental domain, 
 - Roommate profiles
 - Roommate requests
 
+The seeded roommate data includes Alex Morgan and Jordan Lee as male Students and Taylor Brooks and Casey Nguyen as female Students. This provides predictable same-gender eligibility data for development and demonstrations.
+
+The seed includes a pending Alex → Jordan roommate request and an accepted Taylor → Casey roommate request for the seeded academic year.
+
 The seed is designed to be repeatable. Running `npm run db:seed` again does not duplicate the predefined demo records.
 
 To create a fresh development database from an empty Docker volume:
@@ -1207,7 +1382,7 @@ Academic year
 Roommate option
 ```
 
-The roommate option currently indicates that roommate selection will be completed in the later Roommates workflow.
+The roommate option indicates that roommate selection is completed through the separate Roommates workflow.
 
 Students may continue editing a draft before submission.
 
@@ -1236,7 +1411,62 @@ Next workflow step
 
 Students can cancel applications that remain in an eligible pre-assignment state.
 
+When an application is approved, the Student can continue from the application page to the Roommates workflow.
+
 Housing Officer internal notes are intentionally not displayed to Students.
+
+#### Roommates
+
+The Roommates workflow provides two clearly separated paths.
+
+Students who already know who they want to live with can search by Student name or Student number and send a direct roommate request. Direct requests do not require the Student to opt into AI-assisted discovery.
+
+Incoming requests can be accepted or declined. Pending outgoing requests can be cancelled. A roommate request does not become accepted until the requested Student explicitly agrees.
+
+Students may also create a Roommate Profile and opt into AI-assisted discovery. The profile includes:
+
+```text
+Sleep schedule
+Wake schedule
+Cleanliness
+Study environment
+Noise tolerance
+Social preference
+Guest frequency
+Typical room use
+Shared belongings preference
+Temperature preference
+Communication style
+Conflict-resolution preference
+Up to three top priorities
+About Me
+Looking For
+```
+
+The main Roommate Matching screen allows an opted-in Student to request ranked recommendations for an academic year.
+
+AI-assisted recommendation cards display:
+
+```text
+Student name
+Academic context
+Compatibility percentage
+Compatibility category
+Major compatibility strengths
+Notable differences
+Compatibility explanation
+Send Roommate Request action
+```
+
+The recommendation process uses deterministic eligibility filtering before compatibility scoring. Students must have Student Profile gender set to `MALE` or `FEMALE`, and roommate candidates must have the same configured gender.
+
+Gender is not displayed as part of a recommendation and does not affect the compatibility score.
+
+AI-assisted recommendations are advisory. Viewing a recommendation does not automatically create a roommate request, establish a roommate pair, or make a housing assignment.
+
+Selecting `Send Roommate Request` converts the Student's decision into the same mutual-consent request workflow used for direct roommate requests.
+
+Once an accepted direct roommate request exists for an academic year, that request takes priority and normal AI-assisted discovery is no longer offered for that housing cycle.
 
 #### Student Placeholder Routes
 
@@ -1244,7 +1474,6 @@ The following Student workflow areas remain placeholders until their planned fea
 
 ```text
 My Housing
-Roommates
 My Lease
 ```
 
@@ -1321,7 +1550,7 @@ COMPLETED
 
 `CANCELLED` is available where appropriate before the later assignment and completion workflows take control.
 
-The currently implemented workflow covers:
+The currently implemented housing-application workflow covers:
 
 ```text
 Student creates a DRAFT application
@@ -1339,7 +1568,11 @@ Housing Officer can save private notes
 Housing Officer approves the application
         ↓
 Application becomes APPROVED
+        ↓
+Student can review roommate options
 ```
+
+The Roommates workflow operates alongside the approved housing application and establishes roommate consent without changing the application to `HOUSING_ASSIGNED`.
 
 The later `HOUSING_ASSIGNED` and `COMPLETED` transitions belong to the housing-assignment and lease feature branches rather than being simulated in the current application workflow.
 
@@ -1361,7 +1594,7 @@ The current implementation roadmap includes:
 11. CI/CD and observability
 12. Final project documentation and presentation preparation
 
-Features 0 through 6 are currently represented in the implementation.
+Features 0 through 7 are currently represented in the implementation.
 
 The roadmap is a working plan and may be adjusted as implementation reveals better sequencing or technical needs.
 
@@ -1399,9 +1632,21 @@ Housing Officer notes are private administrative information and are excluded fr
 
 Application approval and cancellation maintain actor and timestamp information so administrative actions remain traceable.
 
-Roommate matching will support both direct mutual roommate requests and opt-in AI-assisted recommendations. AI recommendations will remain advisory and will not automatically pair students or make housing assignments.
+Roommate matching supports both direct mutual roommate requests and opt-in AI-assisted recommendations.
 
-External integrations such as DocuSign and the AI compatibility provider will be placed behind provider abstractions so the system can use deterministic mock implementations during testing and demonstrations.
+Roommate eligibility is deterministic and separate from compatibility scoring. Campus Rental currently requires same-gender roommate eligibility, while Students with `UNSPECIFIED` gender must update their Student Profile before using roommate matching.
+
+Gender is not part of AI compatibility scoring and is not sent to the AI provider.
+
+AI-assisted compatibility uses an 80% deterministic structured score and a 20% semantic free-text score. Structured compatibility is calculated for all eligible candidates before the strongest five candidates continue to semantic analysis.
+
+AI recommendations remain advisory. They do not automatically pair Students, create housing assignments, or replace mutual consent.
+
+Accepted direct roommate requests take priority over AI-assisted discovery for the same academic year.
+
+The AI compatibility provider is isolated behind a provider abstraction. The implementation supports a deterministic mock provider, a generic remote OpenAI-compatible provider, and deterministic fallback behavior when the remote provider is unavailable.
+
+DocuSign will follow a similar provider-abstraction pattern during the later lease-workflow branch so the external integration does not become tightly coupled to the Campus Rental domain model.
 
 ## AI Use
 
@@ -1409,7 +1654,7 @@ Generative AI is being used during development to assist with planning, design d
 
 AI-generated suggestions are reviewed before being incorporated into the project. Generated code and design recommendations may be modified, rejected, or replaced when they do not fit the project requirements or established architecture.
 
-The AI-assisted roommate matching feature planned for Campus Rental is separate from the use of generative AI as a software-development tool.
+The AI-assisted roommate matching feature implemented in Campus Rental is separate from the use of generative AI as a software-development tool. The application feature uses an explicit provider abstraction, deterministic structured scoring, constrained semantic analysis, privacy safeguards, and fallback behavior so the housing workflow does not depend entirely on a generative AI response.
 
 ---
 
