@@ -1,0 +1,142 @@
+<section class="page">
+  <header class="page-header">
+    <p class="eyebrow">
+      Student Housing
+    </p>
+
+    <h1>Housing Options</h1>
+
+    <p>
+      Review active residence halls and current
+      availability by room style.
+    </p>
+  </header>
+
+  <div class="information-card">
+    <strong>
+      Housing preferences do not guarantee
+      a specific placement.
+    </strong>
+
+    <p>
+      Availability may change as housing is
+      assigned. Housing Officers make the final
+      room and bed assignments.
+    </p>
+  </div>
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading housing options...</p>
+    </div>
+  } @else if (error()) {
+    <div class="card">
+      <div class="error-message">
+        {{ error() }}
+      </div>
+    </div>
+  } @else if (buildings().length === 0) {
+    <div class="card empty-state">
+      <h2>No housing options available</h2>
+
+      <p>
+        There are currently no active residence
+        halls available to review.
+      </p>
+    </div>
+  } @else {
+    <div class="building-grid">
+      @for (
+        building of buildings();
+        track building.id
+      ) {
+        <article class="building-card">
+          <header class="building-header">
+            <div>
+              <h2>{{ building.name }}</h2>
+
+              <p class="address">
+                {{ building.address }}
+              </p>
+            </div>
+
+            <div
+              class="availability-summary"
+              [class.no-availability]="
+                building.availableBeds === 0
+              "
+            >
+              <strong>
+                {{ building.availableBeds }}
+              </strong>
+
+              <span>
+                of {{ building.totalBeds }}
+                spaces available
+              </span>
+            </div>
+          </header>
+
+          @if (building.description) {
+            <p class="description">
+              {{ building.description }}
+            </p>
+          }
+
+          <div class="room-styles">
+            <h3>Room Style Availability</h3>
+
+            @if (
+              building.roomStyles.length === 0
+            ) {
+              <p class="empty-styles">
+                No active room inventory is
+                currently configured for this hall.
+              </p>
+            }
+
+            @for (
+              roomStyle of building.roomStyles;
+              track roomStyle.roomStyle
+            ) {
+              <div class="room-style-row">
+                <div>
+                  <strong>
+                    {{
+                      roomStyleLabel(
+                        roomStyle.roomStyle
+                      )
+                    }}
+                  </strong>
+
+                  <span class="capacity">
+                    {{
+                      roomStyle.totalBeds
+                    }}
+                    total
+                  </span>
+                </div>
+
+                <span
+                  class="availability-badge"
+                  [class.available]="
+                    roomStyle.availableBeds > 0
+                  "
+                  [class.unavailable]="
+                    roomStyle.availableBeds === 0
+                  "
+                >
+                  {{
+                    availabilityLabel(
+                      roomStyle.availableBeds
+                    )
+                  }}
+                </span>
+              </div>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,529 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">
+        Housing Officer
+      </p>
+
+      <h1>Housing Inventory</h1>
+
+      <p>
+        Manage residence halls, rooms, beds,
+        and inventory availability.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="primary-button"
+      [disabled]="saving()"
+      (click)="startAddBuilding()"
+    >
+      + Add Building
+    </button>
+  </header>
+
+  @if (message()) {
+    <div class="page-message success-message">
+      {{ message() }}
+    </div>
+  }
+
+  @if (error()) {
+    <div class="page-message error-message">
+      {{ error() }}
+    </div>
+  }
+
+  @if (buildingEditor()) {
+    <form
+      class="editor-card"
+      [formGroup]="buildingForm"
+      (ngSubmit)="saveBuilding()"
+    >
+      <h2>
+        {{
+          buildingEditor()?.mode === 'create'
+            ? 'Add Building'
+            : 'Edit Building'
+        }}
+      </h2>
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="buildingName">
+            Building Name
+          </label>
+
+          <input
+            id="buildingName"
+            type="text"
+            formControlName="name"
+          />
+
+          @if (
+            buildingForm.controls.name.touched
+            && buildingForm.controls.name.invalid
+          ) {
+            <span class="field-error">
+              Building name is required and must
+              be 150 characters or fewer.
+            </span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="buildingAddress">
+            Address
+          </label>
+
+          <input
+            id="buildingAddress"
+            type="text"
+            formControlName="address"
+          />
+
+          @if (
+            buildingForm.controls.address.touched
+            && buildingForm.controls.address.invalid
+          ) {
+            <span class="field-error">
+              Address is required and must be
+              255 characters or fewer.
+            </span>
+          }
+        </div>
+
+        <div class="form-field full-width">
+          <label for="buildingDescription">
+            Description
+          </label>
+
+          <textarea
+            id="buildingDescription"
+            rows="3"
+            formControlName="description"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="saving()"
+          (click)="cancelEdit()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          class="primary-button"
+          [disabled]="saving()"
+        >
+          {{
+            saving()
+              ? 'Saving...'
+              : 'Save Building'
+          }}
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (roomEditor()) {
+    <form
+      class="editor-card"
+      [formGroup]="roomForm"
+      (ngSubmit)="saveRoom()"
+    >
+      <h2>
+        {{
+          roomEditor()?.mode === 'create'
+            ? 'Add Room'
+            : 'Edit Room'
+        }}
+      </h2>
+
+      <div class="form-grid three-column">
+        <div class="form-field">
+          <label for="roomNumber">
+            Room Number
+          </label>
+
+          <input
+            id="roomNumber"
+            type="text"
+            formControlName="roomNumber"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="floor">
+            Floor
+          </label>
+
+          <input
+            id="floor"
+            type="number"
+            formControlName="floor"
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="roomStyle">
+            Room Style
+          </label>
+
+          <select
+            id="roomStyle"
+            formControlName="roomStyle"
+          >
+            @for (
+              roomStyle of roomStyles;
+              track roomStyle
+            ) {
+              <option [value]="roomStyle">
+                {{ roomStyle }}
+              </option>
+            }
+          </select>
+        </div>
+      </div>
+
+      @if (
+        roomForm.controls.roomNumber.touched
+        && roomForm.controls.roomNumber.invalid
+      ) {
+        <span class="field-error">
+          Room number is required and must be
+          20 characters or fewer.
+        </span>
+      }
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="saving()"
+          (click)="cancelEdit()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          class="primary-button"
+          [disabled]="saving()"
+        >
+          {{
+            saving()
+              ? 'Saving...'
+              : 'Save Room'
+          }}
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (bedEditor()) {
+    <form
+      class="editor-card"
+      [formGroup]="bedForm"
+      (ngSubmit)="saveBed()"
+    >
+      <h2>
+        {{
+          bedEditor()?.mode === 'create'
+            ? 'Add Bed'
+            : 'Edit Bed'
+        }}
+      </h2>
+
+      <div class="form-field">
+        <label for="bedLabel">
+          Bed Label
+        </label>
+
+        <input
+          id="bedLabel"
+          type="text"
+          formControlName="bedLabel"
+        />
+
+        @if (
+          bedForm.controls.bedLabel.touched
+          && bedForm.controls.bedLabel.invalid
+        ) {
+          <span class="field-error">
+            Bed label is required and must be
+            20 characters or fewer.
+          </span>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="saving()"
+          (click)="cancelEdit()"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          class="primary-button"
+          [disabled]="saving()"
+        >
+          {{
+            saving()
+              ? 'Saving...'
+              : 'Save Bed'
+          }}
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading housing inventory...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="card">
+      <div class="page-message error-message">
+        {{ loadError() }}
+      </div>
+    </div>
+  } @else if (buildings().length === 0) {
+    <div class="card empty-state">
+      <h2>No housing inventory yet</h2>
+
+      <p>
+        Add the first residence hall to begin
+        building the housing inventory.
+      </p>
+    </div>
+  } @else {
+    <div class="inventory-list">
+      @for (
+        building of buildings();
+        track building.id
+      ) {
+        <article
+          class="building-card"
+          [class.inactive-card]="!building.active"
+        >
+          <header class="building-header">
+            <div>
+              <div class="title-line">
+                <h2>{{ building.name }}</h2>
+
+                <span
+                  class="status-badge"
+                  [class.status-active]="building.active"
+                  [class.status-inactive]="!building.active"
+                >
+                  {{
+                    building.active
+                      ? 'Active'
+                      : 'Inactive'
+                  }}
+                </span>
+              </div>
+
+              <p class="address">
+                {{ building.address }}
+              </p>
+
+              @if (building.description) {
+                <p class="description">
+                  {{ building.description }}
+                </p>
+              }
+            </div>
+
+            <div class="item-actions">
+              <button
+                type="button"
+                class="secondary-button small-button"
+                [disabled]="saving()"
+                (click)="startEditBuilding(building)"
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                class="secondary-button small-button"
+                [disabled]="saving()"
+                (click)="toggleBuildingActive(building)"
+              >
+                {{
+                  building.active
+                    ? 'Deactivate'
+                    : 'Activate'
+                }}
+              </button>
+
+              <button
+                type="button"
+                class="primary-button small-button"
+                [disabled]="saving()"
+                (click)="startAddRoom(building.id)"
+              >
+                + Add Room
+              </button>
+            </div>
+          </header>
+
+          <div class="room-list">
+            @if (building.rooms.length === 0) {
+              <p class="empty-child">
+                No rooms have been added to this
+                building.
+              </p>
+            }
+
+            @for (
+              room of building.rooms;
+              track room.id
+            ) {
+              <section
+                class="room-card"
+                [class.inactive-card]="!room.active"
+              >
+                <header class="room-header">
+                  <div class="title-line">
+                    <h3>
+                      Room {{ room.roomNumber }}
+                    </h3>
+
+                    <span class="room-style">
+                      {{ room.roomStyle }}
+                    </span>
+
+                    <span
+                      class="status-badge"
+                      [class.status-active]="room.active"
+                      [class.status-inactive]="!room.active"
+                    >
+                      {{
+                        room.active
+                          ? 'Active'
+                          : 'Inactive'
+                      }}
+                    </span>
+                  </div>
+
+                  <div class="item-actions">
+                    <button
+                      type="button"
+                      class="text-button"
+                      [disabled]="saving()"
+                      (click)="startEditRoom(room)"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      class="text-button"
+                      [disabled]="saving()"
+                      (click)="toggleRoomActive(room)"
+                    >
+                      {{
+                        room.active
+                          ? 'Deactivate'
+                          : 'Activate'
+                      }}
+                    </button>
+
+                    <button
+                      type="button"
+                      class="text-button"
+                      [disabled]="saving()"
+                      (click)="startAddBed(room)"
+                    >
+                      + Add Bed
+                    </button>
+                  </div>
+                </header>
+
+                @if (room.floor !== null) {
+                  <p class="room-meta">
+                    Floor {{ room.floor }}
+                  </p>
+                }
+
+                <div class="bed-list">
+                  @if (room.beds.length === 0) {
+                    <p class="empty-child">
+                      No beds have been added to
+                      this room.
+                    </p>
+                  }
+
+                  @for (
+                    bed of room.beds;
+                    track bed.id
+                  ) {
+                    <div class="bed-row">
+                      <div class="bed-info">
+                        <strong>
+                          Bed {{ bed.bedLabel }}
+                        </strong>
+
+                        <span
+                          class="status-badge"
+                          [class.status-available]="bed.available"
+                          [class.status-inactive]="!bed.active"
+                          [class.status-unavailable]="bed.active && !bed.available"
+                        >
+                          @if (!bed.active) {
+                            Inactive
+                          } @else if (bed.available) {
+                            Available
+                          } @else {
+                            Unavailable
+                          }
+                        </span>
+                      </div>
+
+                      <div class="item-actions">
+                        <button
+                          type="button"
+                          class="text-button"
+                          [disabled]="saving()"
+                          (click)="startEditBed(bed)"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          class="text-button"
+                          [disabled]="saving()"
+                          (click)="toggleBedActive(bed)"
+                        >
+                          {{
+                            bed.active
+                              ? 'Deactivate'
+                              : 'Activate'
+                          }}
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

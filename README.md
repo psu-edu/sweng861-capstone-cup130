@@ -10,7 +10,7 @@ Campus Rental is a full-stack university housing application being developed for
 
 The application is designed around two primary users: Students and Housing Officers. Students will be able to manage a housing application, submit residence hall and room-style preferences, request a known roommate or participate in AI-assisted roommate matching, receive a housing assignment, and complete the lease-signing process.
 
-Housing Officers will manage residence hall inventory, review student applications, consider housing preferences and roommate information, make final room and bed assignments, and manage the leasing workflow.
+Housing Officers manage residence hall inventory, review student applications, consider housing preferences and roommate information, make final room and bed assignments, and manage the leasing workflow.
 
 Students will not directly claim a specific room or bed. Instead, they will submit housing preferences and Housing Officers will make the final assignment based on available inventory and roommate information. Database constraints and backend transactions will protect the assignment process from conflicting bed reservations.
 
@@ -18,7 +18,7 @@ AI-assisted roommate matching is also part of the planned capstone functionality
 
 ## Project Status
 
-The project currently includes the backend, database, Angular frontend, authentication and authorization foundation, and Student Profile workflow.
+The project currently includes the backend, database, Angular frontend, authentication and authorization foundation, Student Profile workflow, and housing inventory management.
 
 Currently implemented:
 
@@ -57,10 +57,20 @@ Currently implemented:
 - Student Profile repository, service, controller, and API routes
 - Student Profile Angular screen with retrieval, editing, validation, and error handling
 - API authorization-boundary tests for Student Profile access and ownership
+- Building, Room, and Bed inventory repository, service, controller, and API layers
+- Housing Officer inventory management API
+- Housing Officer Building → Room → Bed inventory management screen
+- Inventory create, edit, activate, and deactivate operations
+- Room-style handling for `SINGLE`, `DOUBLE`, `TRIPLE`, and `QUAD`
+- Derived bed availability based on inventory state and active housing assignments
+- Student-facing residence hall and room-style availability API
+- Student housing-options view with general availability by hall and room style
+- Validation and user-friendly inventory API errors
 - Backend integration testing with Vitest and PostgreSQL
 - Supertest API integration testing
+- Consolidated backend and frontend verification commands
 
-Housing inventory management, housing applications and preferences, roommate matching, housing assignment, lease processing, and the remaining end-to-end workflow are planned for later feature branches.
+Housing application submission and preference saving, roommate matching, final housing assignment, lease processing, and the remaining end-to-end workflow are planned for later feature branches.
 
 ## Repository Structure
 
@@ -73,7 +83,10 @@ Housing inventory management, housing applications and preferences, roommate mat
 │   │   │   ├── app/
 │   │   │   │   ├── core/      # Shared config and frontend services
 │   │   │   │   ├── layout/    # Shared authenticated application shell
-│   │   │   │   └── pages/     # Routed application pages
+│   │   │   │   └── pages/
+│   │   │   │       ├── housing-inventory/
+│   │   │   │       ├── housing-options/
+│   │   │   │       └── student-profile/
 │   │   │   └── styles.css     # Global styles and design tokens
 │   │   ├── angular.json
 │   │   ├── eslint.config.js
@@ -88,6 +101,7 @@ Housing inventory management, housing applications and preferences, roommate mat
 │       │   │   ├── migrations/
 │       │   │   └── seeds/
 │       │   ├── modules/
+│       │   │   ├── housing-inventory/
 │       │   │   └── student-profile/
 │       │   ├── app.ts
 │       │   └── server.ts
@@ -432,7 +446,13 @@ Run the production Angular build:
 npm run build
 ```
 
-## Authentication and Student Profile API
+Run lint, tests, and the production build together:
+
+```powershell
+npm run verify
+```
+
+## Authentication and Application APIs
 
 ### Current User
 
@@ -489,6 +509,113 @@ Anticipated graduation year
 The backend determines profile ownership from the authenticated Campus Rental user. A client-supplied `userId` is not used to choose which student profile is updated.
 
 A Housing Officer attempting to access the Student Profile API receives HTTP `403 Forbidden`.
+
+### Housing Officer Inventory
+
+The Housing Inventory API is restricted to the `HOUSING_OFFICER` role.
+
+Retrieve the complete Building → Room → Bed inventory hierarchy:
+
+```text
+GET /api/inventory
+```
+
+Create a building:
+
+```text
+POST /api/inventory/buildings
+```
+
+Update, activate, or deactivate a building:
+
+```text
+PUT /api/inventory/buildings/:buildingId
+```
+
+Create a room in a building:
+
+```text
+POST /api/inventory/buildings/:buildingId/rooms
+```
+
+Update, activate, or deactivate a room:
+
+```text
+PUT /api/inventory/rooms/:roomId
+```
+
+Create a bed in a room:
+
+```text
+POST /api/inventory/rooms/:roomId/beds
+```
+
+Update, activate, or deactivate a bed:
+
+```text
+PUT /api/inventory/beds/:bedId
+```
+
+Inventory records are normally activated or deactivated rather than deleted. This preserves inventory relationships and historical housing data.
+
+Room styles currently support:
+
+```text
+SINGLE
+DOUBLE
+TRIPLE
+QUAD
+```
+
+Room style is a classification used by the housing workflow. Physical room capacity is derived from the Bed records associated with the room rather than being stored separately as a capacity field.
+
+The Housing Officer interface provides a confirmation warning when an officer attempts to add more beds than the room style normally represents. The warning is advisory and does not replace the Bed records as the physical capacity source of truth.
+
+### Bed Availability
+
+Bed availability is derived rather than stored as a separate status field.
+
+A bed is considered available when:
+
+```text
+Building is active
+AND Room is active
+AND Bed is active
+AND the Bed does not have a RESERVED or CONFIRMED Housing Assignment
+```
+
+`CANCELLED` and `SUPERSEDED` assignments do not keep a bed unavailable.
+
+This same derived availability behavior is used by the Housing Officer inventory view and the Student housing-options summary.
+
+### Student Housing Options
+
+The Student housing-options API is restricted to the `STUDENT` role.
+
+Retrieve active residence halls and general availability:
+
+```text
+GET /api/student/housing-options
+```
+
+The Student response includes:
+
+```text
+Building name
+Address
+Description
+Total active bed count
+Available bed count
+Room styles
+Total beds by room style
+Available beds by room style
+```
+
+The Student response does not expose room numbers or bed labels.
+
+The current Housing Preferences route uses this endpoint as a read-only housing-options view. Students can review residence halls and room-style availability, but preference submission is intentionally deferred to the housing application/preferences feature.
+
+Students do not claim a specific room or bed from this screen.
 
 ## Health Check
 
@@ -621,11 +748,38 @@ Run lint, production type checking, and build together:
 npm run check
 ```
 
+Run the complete backend verification sequence:
+
+```powershell
+npm run verify
+```
+
+The `verify` script runs:
+
+```text
+ESLint
+Production TypeScript type checking
+Test TypeScript type checking
+Vitest integration tests
+Production TypeScript build
+```
+
 The automated backend tests currently cover areas including:
 
 - Database connectivity
 - Migrations and schema constraints
 - Housing inventory constraints
+- Building → Room → Bed inventory persistence
+- Supported room styles
+- Inventory uniqueness and foreign-key constraints
+- Restrictive inventory deletion behavior
+- Derived bed availability
+- Reserved and confirmed assignment availability behavior
+- Cancelled assignment availability behavior
+- Student housing availability summaries
+- Housing Officer inventory API operations
+- Inventory validation and conflict responses
+- Inventory role authorization
 - Housing workflow constraints
 - Roommate matching constraints
 - Deterministic development seed behavior
@@ -635,7 +789,7 @@ The automated backend tests currently cover areas including:
 - Student Profile API role authorization
 - Student ownership boundaries
 
-The authorization tests exercise the real Express Student Profile route, role middleware, controller, service, repository, and PostgreSQL database while replacing the external Auth0 authentication step with deterministic test identity data.
+The authorization tests exercise real Express routes, role middleware, controllers, services, repositories, and the PostgreSQL database while replacing the external Auth0 authentication step with deterministic test identity data.
 
 Real Auth0 authentication is also verified manually during development using the Angular application and API.
 
@@ -789,7 +943,7 @@ npm run db:seed
 
 After a fresh seed, map any Auth0 development identities to the appropriate local Campus Rental users before testing authenticated workflows.
 
-## Current Angular Authentication Behavior
+## Current Angular Application Behavior
 
 The Angular application includes a public login page at:
 
@@ -819,7 +973,18 @@ My Lease
 My Profile
 ```
 
-Some Student workflow pages remain placeholders until their planned feature branches are implemented.
+The Housing Preferences route currently displays active residence halls and general availability by room style.
+
+This view is read-only during the housing-inventory feature. Students cannot select an exact room or bed and cannot yet save housing preferences.
+
+The following Student workflow pages remain placeholders until their planned feature branches are implemented:
+
+```text
+My Application
+My Housing
+Roommates
+My Lease
+```
 
 ### Housing Officer Navigation
 
@@ -830,7 +995,25 @@ Applications
 Assignments
 ```
 
-The Housing Officer workflow routes currently serve as placeholders for later inventory, application-review, and assignment feature branches.
+Housing Inventory is implemented as an administrative Building → Room → Bed hierarchy.
+
+Housing Officers can:
+
+```text
+Add and edit buildings
+Activate or deactivate buildings
+Add and edit rooms
+Activate or deactivate rooms
+Add and edit beds
+Activate or deactivate beds
+Review derived bed availability
+```
+
+The interface uses activation/deactivation rather than destructive delete operations.
+
+When adding beds, the interface warns the Housing Officer if the number of existing beds already meets the normal count represented by the room style. The officer can still continue because physical capacity is derived from Bed records.
+
+The Applications and Assignments routes remain placeholders for their later feature branches.
 
 Frontend navigation improves usability but is not treated as a security boundary. Protected backend endpoints continue to enforce authentication and role authorization independently.
 
@@ -866,7 +1049,17 @@ Important business rules and authorization boundaries are enforced by the backen
 
 Student Profile ownership is derived from the authenticated local Campus Rental user rather than from a client-supplied user ID.
 
-Bed availability will be derived from active housing assignments instead of storing duplicate availability state directly on bed records.
+Housing inventory follows a Building → Room → Bed hierarchy.
+
+Buildings, rooms, and beds are normally activated or deactivated rather than physically deleted so historical housing data can remain intact.
+
+Room style is stored as `SINGLE`, `DOUBLE`, `TRIPLE`, or `QUAD`, but physical room capacity is derived from the number of Bed records rather than stored as a separate capacity field.
+
+Bed availability is derived from active inventory and active Housing Assignments instead of storing duplicate availability state directly on Bed records.
+
+A bed is unavailable when the building, room, or bed is inactive, or when the bed has an active `RESERVED` or `CONFIRMED` Housing Assignment.
+
+Students review general residence hall and room-style availability rather than exact room or bed inventory.
 
 Students will submit residence hall and room-style preferences rather than selecting a specific room or bed. Housing Officers will make final assignments.
 
