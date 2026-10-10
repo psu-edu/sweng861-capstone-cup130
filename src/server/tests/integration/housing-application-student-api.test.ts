@@ -775,6 +775,218 @@ describe(
     );
 
     it(
+      'allows a student to cancel their own submitted application',
+      async () => {
+        const studentId =
+          await createStudent(1);
+
+        const buildingId =
+          await createBuildingWithRoomStyle();
+
+        const createResponse =
+          await studentRequest(
+            studentId,
+          )
+            .post(
+              '/api/student/applications',
+            )
+            .send({
+              academicYear:
+                '2026-2027',
+              preferredBuildingId:
+                buildingId,
+              preferredRoomStyle:
+                'DOUBLE',
+            });
+
+        const applicationId =
+          createResponse.body
+            .application.id as string;
+
+        await studentRequest(
+          studentId,
+        )
+          .post(
+            `/api/student/applications/${applicationId}/submit`,
+          );
+
+        const response =
+          await studentRequest(
+            studentId,
+          )
+            .post(
+              `/api/student/applications/${applicationId}/cancel`,
+            );
+
+        expect(response.status)
+          .toBe(200);
+
+        expect(
+          response.body.application,
+        ).toMatchObject({
+          id: applicationId,
+          status: 'CANCELLED',
+        });
+
+        expect(
+          response.body.application.cancelledAt,
+        ).not.toBeNull();
+
+        const result =
+          await pool.query<{
+            cancelled_by: string | null;
+          }>(
+            `
+              SELECT cancelled_by
+              FROM housing_applications
+              WHERE id = $1
+            `,
+            [
+              applicationId,
+            ],
+          );
+
+        expect(
+          result.rows[0]?.cancelled_by,
+        ).toBe(studentId);
+      },
+    );
+
+    it(
+      'does not allow a student to cancel another student application',
+      async () => {
+        const firstStudentId =
+          await createStudent(1);
+
+        const secondStudentId =
+          await createStudent(2);
+
+        const buildingId =
+          await createBuildingWithRoomStyle();
+
+        const createResponse =
+          await studentRequest(
+            firstStudentId,
+          )
+            .post(
+              '/api/student/applications',
+            )
+            .send({
+              academicYear:
+                '2026-2027',
+              preferredBuildingId:
+                buildingId,
+              preferredRoomStyle:
+                'DOUBLE',
+            });
+
+        const applicationId =
+          createResponse.body
+            .application.id as string;
+
+        const response =
+          await studentRequest(
+            secondStudentId,
+          )
+            .post(
+              `/api/student/applications/${applicationId}/cancel`,
+            );
+
+        expect(response.status)
+          .toBe(404);
+      },
+    );
+
+    it(
+      'does not cancel housing-assigned or completed applications through the Student endpoint',
+      async () => {
+        const studentId =
+          await createStudent(1);
+
+        const buildingId =
+          await createBuildingWithRoomStyle();
+
+        const createResponse =
+          await studentRequest(
+            studentId,
+          )
+            .post(
+              '/api/student/applications',
+            )
+            .send({
+              academicYear:
+                '2026-2027',
+              preferredBuildingId:
+                buildingId,
+              preferredRoomStyle:
+                'DOUBLE',
+            });
+
+        const applicationId =
+          createResponse.body
+            .application.id as string;
+
+        await pool.query(
+          `
+            UPDATE housing_applications
+            SET status = 'HOUSING_ASSIGNED'
+            WHERE id = $1
+          `,
+          [
+            applicationId,
+          ],
+        );
+
+        const assignedResponse =
+          await studentRequest(
+            studentId,
+          )
+            .post(
+              `/api/student/applications/${applicationId}/cancel`,
+            );
+
+        expect(
+          assignedResponse.status,
+        ).toBe(409);
+
+        expect(
+          assignedResponse.body.message,
+        ).toBe(
+          'Housing-assigned applications must be cancelled through the housing assignment workflow.',
+        );
+
+        await pool.query(
+          `
+            UPDATE housing_applications
+            SET status = 'COMPLETED'
+            WHERE id = $1
+          `,
+          [
+            applicationId,
+          ],
+        );
+
+        const completedResponse =
+          await studentRequest(
+            studentId,
+          )
+            .post(
+              `/api/student/applications/${applicationId}/cancel`,
+            );
+
+        expect(
+          completedResponse.status,
+        ).toBe(409);
+
+        expect(
+          completedResponse.body.message,
+        ).toBe(
+          'Completed housing applications cannot be cancelled.',
+        );
+      },
+    );
+
+    it(
       'prevents a Housing Officer from using Student application endpoints',
       async () => {
         const officerId =

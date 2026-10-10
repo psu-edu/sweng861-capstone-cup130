@@ -1,9 +1,14 @@
 import {
+  approveSubmittedApplication,
+  cancelPreAssignmentApplication,
+  findHousingOfficerApplicationById,
+  findHousingOfficerApplications,
   findStudentApplicationById,
   findStudentApplications,
   hasActiveBuildingRoomStyle,
   insertStudentApplication,
   submitStudentDraftApplication,
+  updateHousingOfficerNotes,
   updateStudentDraftApplication,
 } from './housing-application.repository.js';
 
@@ -13,8 +18,11 @@ import {
 } from '../housing-inventory/housing-inventory.types.js';
 
 import type {
+  HousingApplicationStatus,
+  HousingOfficerApplication,
   StudentHousingApplication,
   StudentHousingApplicationInput,
+  UpdateOfficerNotesInput,
 } from './housing-application.types.js';
 
 export class HousingApplicationValidationError
@@ -151,6 +159,51 @@ function validateInput(
   };
 }
 
+function validateOfficerNotes(
+  input: unknown,
+): UpdateOfficerNotesInput {
+  if (!isRecord(input)) {
+    throw new HousingApplicationValidationError(
+      'Housing Officer notes data is required.',
+    );
+  }
+
+  const value =
+    input.officerNotes;
+
+  if (
+    value === null
+    || value === undefined
+    || value === ''
+  ) {
+    return {
+      officerNotes: null,
+    };
+  }
+
+  if (typeof value !== 'string') {
+    throw new HousingApplicationValidationError(
+      'Housing Officer notes must be text or null.',
+    );
+  }
+
+  const trimmed =
+    value.trim();
+
+  if (trimmed.length > 5000) {
+    throw new HousingApplicationValidationError(
+      'Housing Officer notes must be 5000 characters or fewer.',
+    );
+  }
+
+  return {
+    officerNotes:
+      trimmed === ''
+        ? null
+        : trimmed,
+  };
+}
+
 function validateApplicationId(
   applicationId: string,
 ): void {
@@ -191,6 +244,34 @@ async function validatePreference(
       'The selected residence hall and room style are not currently available as a housing option.',
     );
   }
+}
+
+function assertPreAssignmentCancellationAllowed(
+  status: HousingApplicationStatus,
+): void {
+  if (
+    status === 'DRAFT'
+    || status === 'SUBMITTED'
+    || status === 'APPROVED'
+  ) {
+    return;
+  }
+
+  if (status === 'HOUSING_ASSIGNED') {
+    throw new HousingApplicationConflictError(
+      'Housing-assigned applications must be cancelled through the housing assignment workflow.',
+    );
+  }
+
+  if (status === 'COMPLETED') {
+    throw new HousingApplicationConflictError(
+      'Completed housing applications cannot be cancelled.',
+    );
+  }
+
+  throw new HousingApplicationConflictError(
+    'The housing application is already cancelled.',
+  );
 }
 
 export async function getStudentHousingApplications(
@@ -342,4 +423,154 @@ export async function submitStudentHousingApplication(
   }
 
   return application;
+}
+
+export async function cancelStudentHousingApplication(
+  studentId: string,
+  applicationId: string,
+): Promise<StudentHousingApplication | null> {
+  validateApplicationId(
+    applicationId,
+  );
+
+  const existing =
+    await findStudentApplicationById(
+      studentId,
+      applicationId,
+    );
+
+  if (existing === null) {
+    return null;
+  }
+
+  assertPreAssignmentCancellationAllowed(
+    existing.status,
+  );
+
+  const cancelled =
+    await cancelPreAssignmentApplication(
+      applicationId,
+      studentId,
+    );
+
+  if (!cancelled) {
+    throw new HousingApplicationConflictError(
+      'The housing application can no longer be cancelled.',
+    );
+  }
+
+  return findStudentApplicationById(
+    studentId,
+    applicationId,
+  );
+}
+
+export async function getHousingOfficerApplications():
+Promise<HousingOfficerApplication[]> {
+  return findHousingOfficerApplications();
+}
+
+export async function getHousingOfficerApplication(
+  applicationId: string,
+): Promise<HousingOfficerApplication | null> {
+  validateApplicationId(
+    applicationId,
+  );
+
+  return findHousingOfficerApplicationById(
+    applicationId,
+  );
+}
+
+export async function saveHousingOfficerNotes(
+  applicationId: string,
+  input: unknown,
+): Promise<HousingOfficerApplication | null> {
+  validateApplicationId(
+    applicationId,
+  );
+
+  const validated =
+    validateOfficerNotes(input);
+
+  return updateHousingOfficerNotes(
+    applicationId,
+    validated,
+  );
+}
+
+export async function approveHousingApplication(
+  applicationId: string,
+  officerId: string,
+): Promise<HousingOfficerApplication | null> {
+  validateApplicationId(
+    applicationId,
+  );
+
+  const existing =
+    await findHousingOfficerApplicationById(
+      applicationId,
+    );
+
+  if (existing === null) {
+    return null;
+  }
+
+  if (existing.status !== 'SUBMITTED') {
+    throw new HousingApplicationConflictError(
+      'Only submitted housing applications can be approved.',
+    );
+  }
+
+  const application =
+    await approveSubmittedApplication(
+      applicationId,
+      officerId,
+    );
+
+  if (application === null) {
+    throw new HousingApplicationConflictError(
+      'The housing application is no longer awaiting approval.',
+    );
+  }
+
+  return application;
+}
+
+export async function cancelHousingOfficerApplication(
+  applicationId: string,
+  officerId: string,
+): Promise<HousingOfficerApplication | null> {
+  validateApplicationId(
+    applicationId,
+  );
+
+  const existing =
+    await findHousingOfficerApplicationById(
+      applicationId,
+    );
+
+  if (existing === null) {
+    return null;
+  }
+
+  assertPreAssignmentCancellationAllowed(
+    existing.status,
+  );
+
+  const cancelled =
+    await cancelPreAssignmentApplication(
+      applicationId,
+      officerId,
+    );
+
+  if (!cancelled) {
+    throw new HousingApplicationConflictError(
+      'The housing application can no longer be cancelled.',
+    );
+  }
+
+  return findHousingOfficerApplicationById(
+    applicationId,
+  );
 }
