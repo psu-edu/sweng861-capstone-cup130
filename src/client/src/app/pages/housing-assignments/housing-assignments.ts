@@ -467,6 +467,76 @@ implements OnInit {
     );
   }
 
+  protected assignedRoommateAssignment(
+    roommate:
+      HousingAssignmentRoommate,
+  ): HousingAssignmentRecord | null {
+    const application =
+      this.roommateApplication(
+        roommate,
+      );
+
+    if (
+      application === null
+      || application.status
+        !== 'HOUSING_ASSIGNED'
+    ) {
+      return null;
+    }
+
+    const assignment =
+      this.currentAssignment(
+        application,
+      );
+
+    if (
+      assignment === null
+      || (
+        assignment.status
+          !== 'RESERVED'
+        && assignment.status
+          !== 'CONFIRMED'
+      )
+    ) {
+      return null;
+    }
+
+    return assignment;
+  }
+
+  protected assignedRoommateInRoom(
+    room:
+      HousingAssignmentOptionRoom,
+  ): HousingAssignmentRecord | null {
+    const application =
+      this.selectedApplication();
+
+    if (
+      application === null
+    ) {
+      return null;
+    }
+
+    for (
+      const roommate
+      of application.roommates
+    ) {
+      const assignment =
+        this.assignedRoommateAssignment(
+          roommate,
+        );
+
+      if (
+        assignment?.roomId
+        === room.id
+      ) {
+        return assignment;
+      }
+    }
+
+    return null;
+  }
+
   protected roomCanSupportMode(
     room:
       HousingAssignmentOptionRoom,

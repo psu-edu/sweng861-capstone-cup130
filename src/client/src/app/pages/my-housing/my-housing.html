@@ -128,6 +128,72 @@
               </div>
 
               <dl class="date-list">
+                @if (
+                  assignment.totalBedCount
+                    !== null
+                  && assignment
+                    .occupiedBedCount
+                    !== null
+                  && assignment.openBedCount
+                    !== null
+                ) {
+                  <div>
+                    <dt>Room Occupancy</dt>
+
+                    <dd>
+                      {{
+                        assignment
+                          .occupiedBedCount
+                      }}
+                      of
+                      {{
+                        assignment
+                          .totalBedCount
+                      }}
+                      {{
+                        assignment.totalBedCount
+                          === 1
+                          ? 'bed'
+                          : 'beds'
+                      }}
+                      occupied
+                      ·
+                      {{
+                        assignment
+                          .openBedCount
+                      }}
+                      {{
+                        assignment.openBedCount
+                          === 1
+                          ? 'bed'
+                          : 'beds'
+                      }}
+                      open
+                    </dd>
+                  </div>
+                }
+
+                @for (
+                  roommate
+                    of assignment
+                      .assignedRoommates;
+                  track
+                    roommate.firstName
+                    + roommate.lastName
+                    + roommate.bedLabel
+                ) {
+                  <div>
+                    <dt>Assigned Roommate</dt>
+
+                    <dd>
+                      {{ roommate.firstName }}
+                      {{ roommate.lastName }}
+                      · Bed
+                      {{ roommate.bedLabel }}
+                    </dd>
+                  </div>
+                }
+
                 <div>
                   <dt>Reserved</dt>
 

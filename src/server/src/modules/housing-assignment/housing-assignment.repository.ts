@@ -21,8 +21,7 @@ import type {
   HousingAssignmentOptions,
   HousingAssignmentRecord,
   HousingAssignmentRoommate,
-  HousingAssignmentStatus,
-  StudentHousingAssignment,
+  HousingAssignmentStatus
 } from './housing-assignment.types.js';
 
 interface AssignmentRow {
@@ -280,25 +279,6 @@ function mapAssignment(
     supersededAt: row.superseded_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-  };
-}
-
-function mapStudentAssignment(
-  row: AssignmentRow,
-): StudentHousingAssignment {
-  return {
-    id: row.id,
-    applicationId: row.application_id,
-    academicYear: row.academic_year,
-    status: row.status,
-    buildingName: row.building_name,
-    roomNumber: row.room_number,
-    roomStyle: row.room_style,
-    bedLabel: row.bed_label,
-    reservedAt: row.reserved_at,
-    confirmedAt: row.confirmed_at,
-    cancelledAt: row.cancelled_at,
-    supersededAt: row.superseded_at,
   };
 }
 
@@ -653,34 +633,6 @@ Promise<HousingAssignmentRecord[]> {
 
   return result.rows.map(
     mapAssignment,
-  );
-}
-
-export async function findStudentHousingAssignments(
-  studentId: string,
-): Promise<StudentHousingAssignment[]> {
-  const result =
-    await pool.query<AssignmentRow>(
-      `
-        ${ASSIGNMENT_SELECT}
-        WHERE application.student_id = $1
-        ORDER BY
-          CASE assignment.status
-            WHEN 'RESERVED' THEN 1
-            WHEN 'CONFIRMED' THEN 2
-            WHEN 'CANCELLED' THEN 3
-            WHEN 'SUPERSEDED' THEN 4
-          END,
-          assignment.reserved_at DESC,
-          assignment.id DESC
-      `,
-      [
-        studentId,
-      ],
-    );
-
-  return result.rows.map(
-    mapStudentAssignment,
   );
 }
 

@@ -433,6 +433,31 @@
                         }}
                       </span>
                     }
+
+                    @if (
+                      assignedRoommateAssignment(
+                        roommate
+                      );
+                      as roommateAssignment
+                    ) {
+                      <span class="secondary-text">
+                        Assigned:
+                        {{
+                          roommateAssignment
+                            .buildingName
+                        }}
+                        · Room
+                        {{
+                          roommateAssignment
+                            .roomNumber
+                        }}
+                        · Bed
+                        {{
+                          roommateAssignment
+                            .bedLabel
+                        }}
+                      </span>
+                    }
                   </article>
                 }
               </div>
@@ -790,6 +815,25 @@
                                     ) {
                                       <span class="preference-badge">
                                         Preferred Style
+                                      </span>
+                                    }
+
+                                    @if (
+                                      assignedRoommateInRoom(
+                                        room
+                                      );
+                                      as roommateAssignment
+                                    ) {
+                                      <span class="preference-badge">
+                                        {{
+                                          roommateAssignment
+                                            .firstName
+                                        }}
+                                        {{
+                                          roommateAssignment
+                                            .lastName
+                                        }}
+                                        Assigned Here
                                       </span>
                                     }
                                   </div>

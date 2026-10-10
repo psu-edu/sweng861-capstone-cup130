@@ -41,6 +41,12 @@ export interface HousingAssignmentRecord {
   updatedAt: Date;
 }
 
+export interface StudentHousingAssignedRoommate {
+  firstName: string;
+  lastName: string;
+  bedLabel: string;
+}
+
 export interface StudentHousingAssignment {
   id: string;
   applicationId: string;
@@ -54,6 +60,11 @@ export interface StudentHousingAssignment {
   confirmedAt: Date | null;
   cancelledAt: Date | null;
   supersededAt: Date | null;
+  totalBedCount: number | null;
+  occupiedBedCount: number | null;
+  openBedCount: number | null;
+  assignedRoommates:
+    StudentHousingAssignedRoommate[];
 }
 
 export interface HousingAssignmentRoommate {

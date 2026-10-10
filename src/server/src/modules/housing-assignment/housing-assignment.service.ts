@@ -5,10 +5,13 @@ import {
   findAllHousingAssignments,
   findHousingAssignmentApplications,
   findHousingAssignmentOptions,
-  findStudentHousingAssignments,
   reserveHousingAssignment,
   reserveRoommatePairAssignments,
 } from './housing-assignment.repository.js';
+
+import {
+  findDetailedStudentHousingAssignments,
+} from './student-housing.repository.js';
 
 import type {
   ChangeHousingAssignmentInput,
@@ -560,7 +563,7 @@ export async function cancelHousingAssignment(
 export async function getStudentHousing(
   studentId: string,
 ): Promise<StudentHousingAssignment[]> {
-  return findStudentHousingAssignments(
+  return findDetailedStudentHousingAssignments(
     studentId,
   );
 }
