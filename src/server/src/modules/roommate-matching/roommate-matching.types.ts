@@ -32,6 +32,25 @@ export const ROOMMATE_REQUEST_STATUSES = [
 export type RoommateRequestStatus =
   (typeof ROOMMATE_REQUEST_STATUSES)[number];
 
+export const COMPATIBILITY_CATEGORIES = [
+  'EXCELLENT',
+  'STRONG',
+  'MODERATE',
+  'MIXED',
+] as const;
+
+export type CompatibilityCategory =
+  (typeof COMPATIBILITY_CATEGORIES)[number];
+
+export const AI_ANALYSIS_SOURCES = [
+  'MOCK',
+  'REMOTE',
+  'FALLBACK',
+] as const;
+
+export type AIAnalysisSource =
+  (typeof AI_ANALYSIS_SOURCES)[number];
+
 export interface RoommateProfile {
   studentId: string;
   optedIn: boolean;
@@ -117,4 +136,34 @@ export interface RoommateRequest {
 export interface CreateRoommateRequestInput {
   requestedStudentId: string;
   academicYear: string;
+}
+
+export interface RoommateRecommendationCandidate {
+  student: RoommateStudentSummary;
+  profile: RoommateProfile;
+}
+
+export interface RoommateRecommendation {
+  candidate: RoommateStudentSummary;
+
+  compatibilityScore: number;
+  compatibilityCategory:
+    CompatibilityCategory;
+
+  structuredScore: number;
+  semanticScore: number;
+
+  strengths: string[];
+  differences: string[];
+
+  explanation: string;
+
+  analysisSource:
+    AIAnalysisSource;
+}
+
+export interface RoommateRecommendationResult {
+  academicYear: string;
+  recommendations:
+    RoommateRecommendation[];
 }

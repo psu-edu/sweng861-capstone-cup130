@@ -1,6 +1,6 @@
-import { dirname, resolve } from 'node:path';
-import { loadEnvFile } from 'node:process';
-import { fileURLToPath } from 'node:url';
+import {dirname,resolve} from 'node:path';
+import {loadEnvFile} from 'node:process';
+import {fileURLToPath} from 'node:url';
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const rootEnvPath = resolve(currentDirectory, '../../../../.env');
@@ -15,11 +15,20 @@ try {
   }
 }
 
-function getFirstDefined(...names: string[]): string | undefined {
-  for (const name of names) {
-    const value = process.env[name];
+function getFirstDefined(
+  ...names: string[]
+): string | undefined {
+  for (
+    const name
+    of names
+  ) {
+    const value =
+      process.env[name];
 
-    if (value !== undefined && value.trim() !== '') {
+    if (
+      value !== undefined
+      && value.trim() !== ''
+    ) {
       return value;
     }
   }
@@ -27,8 +36,13 @@ function getFirstDefined(...names: string[]): string | undefined {
   return undefined;
 }
 
-function getRequiredEnvironmentValue(...names: string[]): string {
-  const value = getFirstDefined(...names);
+function getRequiredEnvironmentValue(
+  ...names: string[]
+): string {
+  const value =
+    getFirstDefined(
+      ...names,
+    );
 
   if (value === undefined) {
     throw new Error(
@@ -39,53 +53,168 @@ function getRequiredEnvironmentValue(...names: string[]): string {
   return value;
 }
 
-function parsePort(value: string, name: string): number {
-  const port = Number(value);
+function parsePort(
+  value: string,
+  name: string,
+): number {
+  const port =
+    Number(value);
 
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error(`${name} must be a valid TCP port number.`);
+  if (
+    !Number.isInteger(port)
+    || port < 1
+    || port > 65535
+  ) {
+    throw new Error(
+      `${name} must be a valid TCP port number.`,
+    );
   }
 
   return port;
 }
 
-export const environment = Object.freeze({
-  serverPort: parsePort(
-    getFirstDefined('SERVER_PORT') ?? '3000',
-    'SERVER_PORT',
-  ),
+function parseIntegerInRange(
+  value: string,
+  name: string,
+  minimum: number,
+  maximum: number,
+): number {
+  const parsed =
+    Number(value);
 
-  database: Object.freeze({
-    host: getFirstDefined('DATABASE_HOST') ?? 'localhost',
+  if (
+    !Number.isInteger(parsed)
+    || parsed < minimum
+    || parsed > maximum
+  ) {
+    throw new Error(
+      `${name} must be an integer from ${minimum} through ${maximum}.`,
+    );
+  }
 
-    port: parsePort(
-      getFirstDefined('DATABASE_PORT', 'POSTGRES_HOST_PORT') ?? '5432',
-      'DATABASE_PORT/POSTGRES_HOST_PORT',
-    ),
+  return parsed;
+}
 
-    name: getRequiredEnvironmentValue(
-      'DATABASE_NAME',
-      'POSTGRES_DB',
-    ),
+function parseAIProvider(
+  value: string,
+): 'mock' | 'remote' {
+  const normalized =
+    value
+      .trim()
+      .toLowerCase();
 
-    user: getRequiredEnvironmentValue(
-      'DATABASE_USER',
-      'POSTGRES_USER',
-    ),
+  if (
+    normalized === 'mock'
+    || normalized === 'remote'
+  ) {
+    return normalized;
+  }
 
-    password: getRequiredEnvironmentValue(
-      'DATABASE_PASSWORD',
-      'POSTGRES_PASSWORD',
-    ),
-  }),
+  throw new Error(
+    'AI_PROVIDER must be mock or remote.',
+  );
+}
 
-  auth0: Object.freeze({
-    domain: getRequiredEnvironmentValue(
-      'AUTH0_DOMAIN',
-    ),
+export const environment =
+  Object.freeze({
+    serverPort:
+      parsePort(
+        getFirstDefined(
+          'SERVER_PORT',
+        ) ?? '3000',
+        'SERVER_PORT',
+      ),
 
-    audience: getRequiredEnvironmentValue(
-      'AUTH0_AUDIENCE',
-    ),
-  }),
-});
+    database:
+      Object.freeze({
+        host:
+          getFirstDefined(
+            'DATABASE_HOST',
+          ) ?? 'localhost',
+
+        port:
+          parsePort(
+            getFirstDefined(
+              'DATABASE_PORT',
+              'POSTGRES_HOST_PORT',
+            ) ?? '5432',
+            'DATABASE_PORT/POSTGRES_HOST_PORT',
+          ),
+
+        name:
+          getRequiredEnvironmentValue(
+            'DATABASE_NAME',
+            'POSTGRES_DB',
+          ),
+
+        user:
+          getRequiredEnvironmentValue(
+            'DATABASE_USER',
+            'POSTGRES_USER',
+          ),
+
+        password:
+          getRequiredEnvironmentValue(
+            'DATABASE_PASSWORD',
+            'POSTGRES_PASSWORD',
+          ),
+      }),
+
+    auth0:
+      Object.freeze({
+        domain:
+          getRequiredEnvironmentValue(
+            'AUTH0_DOMAIN',
+          ),
+
+        audience:
+          getRequiredEnvironmentValue(
+            'AUTH0_AUDIENCE',
+          ),
+      }),
+
+    ai:
+      Object.freeze({
+        provider:
+          parseAIProvider(
+            getFirstDefined(
+              'AI_PROVIDER',
+            ) ?? 'mock',
+          ),
+
+        baseUrl:
+          getFirstDefined(
+            'AI_BASE_URL',
+          ) ?? '',
+
+        model:
+          getFirstDefined(
+            'AI_MODEL',
+          ) ?? '',
+
+        apiKey:
+          getFirstDefined(
+            'AI_API_KEY',
+          ) ?? '',
+
+        maxTokens:
+          parseIntegerInRange(
+            getFirstDefined(
+              'AI_MAX_TOKENS',
+            ) ?? '200',
+            'AI_MAX_TOKENS',
+            1,
+            2000,
+          ),
+
+        timeoutMs:
+          parseIntegerInRange(
+            getFirstDefined(
+              'AI_TIMEOUT_MS',
+            ) ?? '20000',
+            'AI_TIMEOUT_MS',
+            1000,
+            60000,
+          ),
+      }),
+  });

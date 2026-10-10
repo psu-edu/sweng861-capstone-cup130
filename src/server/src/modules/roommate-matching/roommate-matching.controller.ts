@@ -14,6 +14,7 @@ import {
   declineRoommateRequest,
   findRoommateStudents,
   getRoommateProfile,
+  getRoommateRecommendations,
   getRoommateRequests,
   RoommateConflictError,
   RoommateNotFoundError,
@@ -47,8 +48,11 @@ function handleRoommateError(
     instanceof RoommateValidationError
   ) {
     res.status(400).json({
-      error: 'validation_error',
-      message: error.message,
+      error:
+        'validation_error',
+
+      message:
+        error.message,
     });
 
     return true;
@@ -59,8 +63,11 @@ function handleRoommateError(
     instanceof RoommateNotFoundError
   ) {
     res.status(404).json({
-      error: 'not_found',
-      message: error.message,
+      error:
+        'not_found',
+
+      message:
+        error.message,
     });
 
     return true;
@@ -71,8 +78,11 @@ function handleRoommateError(
     instanceof RoommateConflictError
   ) {
     res.status(409).json({
-      error: 'conflict',
-      message: error.message,
+      error:
+        'conflict',
+
+      message:
+        error.message,
     });
 
     return true;
@@ -85,7 +95,9 @@ function sendAuthenticationRequired(
   res: Response,
 ): void {
   res.status(401).json({
-    error: 'unauthorized',
+    error:
+      'unauthorized',
+
     message:
       'Authentication is required.',
   });
@@ -96,7 +108,9 @@ export async function getCurrentRoommateProfile(
   res: Response,
 ): Promise<void> {
   const studentId =
-    getAuthenticatedUserId(req);
+    getAuthenticatedUserId(
+      req,
+    );
 
   if (studentId === null) {
     sendAuthenticationRequired(
@@ -121,7 +135,9 @@ export async function updateCurrentRoommateProfile(
   res: Response,
 ): Promise<void> {
   const studentId =
-    getAuthenticatedUserId(req);
+    getAuthenticatedUserId(
+      req,
+    );
 
   if (studentId === null) {
     sendAuthenticationRequired(
@@ -160,7 +176,9 @@ export async function searchCurrentStudentRoommates(
   res: Response,
 ): Promise<void> {
   const studentId =
-    getAuthenticatedUserId(req);
+    getAuthenticatedUserId(
+      req,
+    );
 
   if (studentId === null) {
     sendAuthenticationRequired(
@@ -199,7 +217,9 @@ export async function getCurrentStudentRoommateRequests(
   res: Response,
 ): Promise<void> {
   const studentId =
-    getAuthenticatedUserId(req);
+    getAuthenticatedUserId(
+      req,
+    );
 
   if (studentId === null) {
     sendAuthenticationRequired(
@@ -224,7 +244,9 @@ export async function createCurrentStudentRoommateRequest(
   res: Response,
 ): Promise<void> {
   const studentId =
-    getAuthenticatedUserId(req);
+    getAuthenticatedUserId(
+      req,
+    );
 
   if (studentId === null) {
     sendAuthenticationRequired(
@@ -242,7 +264,8 @@ export async function createCurrentStudentRoommateRequest(
       );
 
     res.status(201).json({
-      request: roommateRequest,
+      request:
+        roommateRequest,
     });
   } catch (error: unknown) {
     if (
@@ -263,7 +286,9 @@ export async function acceptCurrentStudentRoommateRequest(
   res: Response,
 ): Promise<void> {
   const studentId =
-    getAuthenticatedUserId(req);
+    getAuthenticatedUserId(
+      req,
+    );
 
   if (studentId === null) {
     sendAuthenticationRequired(
@@ -280,9 +305,14 @@ export async function acceptCurrentStudentRoommateRequest(
         req.params.requestId,
       );
 
-    if (roommateRequest === null) {
+    if (
+      roommateRequest
+      === null
+    ) {
       res.status(404).json({
-        error: 'not_found',
+        error:
+          'not_found',
+
         message:
           'Roommate request was not found.',
       });
@@ -291,7 +321,8 @@ export async function acceptCurrentStudentRoommateRequest(
     }
 
     res.status(200).json({
-      request: roommateRequest,
+      request:
+        roommateRequest,
     });
   } catch (error: unknown) {
     if (
@@ -312,7 +343,9 @@ export async function declineCurrentStudentRoommateRequest(
   res: Response,
 ): Promise<void> {
   const studentId =
-    getAuthenticatedUserId(req);
+    getAuthenticatedUserId(
+      req,
+    );
 
   if (studentId === null) {
     sendAuthenticationRequired(
@@ -329,9 +362,14 @@ export async function declineCurrentStudentRoommateRequest(
         req.params.requestId,
       );
 
-    if (roommateRequest === null) {
+    if (
+      roommateRequest
+      === null
+    ) {
       res.status(404).json({
-        error: 'not_found',
+        error:
+          'not_found',
+
         message:
           'Roommate request was not found.',
       });
@@ -340,7 +378,8 @@ export async function declineCurrentStudentRoommateRequest(
     }
 
     res.status(200).json({
-      request: roommateRequest,
+      request:
+        roommateRequest,
     });
   } catch (error: unknown) {
     if (
@@ -361,7 +400,9 @@ export async function cancelCurrentStudentRoommateRequest(
   res: Response,
 ): Promise<void> {
   const studentId =
-    getAuthenticatedUserId(req);
+    getAuthenticatedUserId(
+      req,
+    );
 
   if (studentId === null) {
     sendAuthenticationRequired(
@@ -378,9 +419,14 @@ export async function cancelCurrentStudentRoommateRequest(
         req.params.requestId,
       );
 
-    if (roommateRequest === null) {
+    if (
+      roommateRequest
+      === null
+    ) {
       res.status(404).json({
-        error: 'not_found',
+        error:
+          'not_found',
+
         message:
           'Roommate request was not found.',
       });
@@ -389,8 +435,50 @@ export async function cancelCurrentStudentRoommateRequest(
     }
 
     res.status(200).json({
-      request: roommateRequest,
+      request:
+        roommateRequest,
     });
+  } catch (error: unknown) {
+    if (
+      handleRoommateError(
+        error,
+        res,
+      )
+    ) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+export async function getCurrentStudentRoommateRecommendations(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  const studentId =
+    getAuthenticatedUserId(
+      req,
+    );
+
+  if (studentId === null) {
+    sendAuthenticationRequired(
+      res,
+    );
+
+    return;
+  }
+
+  try {
+    const result =
+      await getRoommateRecommendations(
+        studentId,
+        req.query.academicYear,
+      );
+
+    res.status(200).json(
+      result,
+    );
   } catch (error: unknown) {
     if (
       handleRoommateError(

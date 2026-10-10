@@ -3,9 +3,17 @@ import type {
 } from '../student-profile/student-profile.types.js';
 
 import {
+  calculateStructuredCompatibility,
+  combineCompatibilityScores,
+  getCompatibilityCategory,
+} from './roommate-compatibility.js';
+
+import {
   acceptPendingRoommateRequest,
   cancelPendingRoommateRequest,
   declinePendingRoommateRequest,
+  findAcceptedRoommateRequestForStudent,
+  findAIEligibleRoommateCandidates,
   findRoommateProfileByStudentId,
   findRoommateRequestByIdForStudent,
   findRoommateRequestsForStudent,
@@ -21,12 +29,23 @@ import {
   type RoommatePriority,
   type RoommateProfile,
   type RoommateProfileInput,
+  type RoommateRecommendation,
+  type RoommateRecommendationResult,
   type RoommateRequest,
   type RoommateStudentSummary,
 } from './roommate-matching.types.js';
 
+import {
+  createAICompatibilityProvider,
+} from './providers/ai-provider.factory.js';
+
 type MatchableGender =
   Exclude<Gender, 'UNSPECIFIED'>;
+
+const MAX_AI_CANDIDATES = 5;
+
+const aiCompatibilityProvider =
+  createAICompatibilityProvider();
 
 export class RoommateValidationError
   extends Error {
@@ -73,7 +92,10 @@ function getBoolean(
   const value =
     input[field];
 
-  if (typeof value !== 'boolean') {
+  if (
+    typeof value
+    !== 'boolean'
+  ) {
     throw new RoommateValidationError(
       `${label} must be true or false.`,
     );
@@ -150,7 +172,10 @@ function getOptionalText(
     return null;
   }
 
-  if (typeof value !== 'string') {
+  if (
+    typeof value
+    !== 'string'
+  ) {
     throw new RoommateValidationError(
       `${label} must be text or null.`,
     );
@@ -167,7 +192,8 @@ function getOptionalText(
 }
 
 function validatePriorities(
-  priorities: (RoommatePriority | null)[],
+  priorities:
+    (RoommatePriority | null)[],
 ): void {
   const selected =
     priorities.filter(
@@ -335,7 +361,8 @@ function validateRoommateProfileInput(
   };
 }
 
-function getAllowedAcademicYears(): string[] {
+function getAllowedAcademicYears():
+string[] {
   const now =
     new Date();
 
@@ -360,12 +387,9 @@ function getAllowedAcademicYears(): string[] {
   );
 }
 
-function getAcademicYear(
-  input: Record<string, unknown>,
+function validateAcademicYear(
+  value: unknown,
 ): string {
-  const value =
-    input.academicYear;
-
   if (
     typeof value !== 'string'
     || value.trim() === ''
@@ -427,7 +451,9 @@ function getStudentId(
 
   if (
     typeof value !== 'string'
-    || !/^[1-9]\d*$/.test(value)
+    || !/^[1-9]\d*$/.test(
+      value,
+    )
   ) {
     throw new RoommateValidationError(
       `${label} is invalid.`,
@@ -455,14 +481,20 @@ function validateCreateRequestInput(
       ),
 
     academicYear:
-      getAcademicYear(input),
+      validateAcademicYear(
+        input.academicYear,
+      ),
   };
 }
 
 function validateRequestId(
   requestId: string,
 ): void {
-  if (!/^[1-9]\d*$/.test(requestId)) {
+  if (
+    !/^[1-9]\d*$/.test(
+      requestId,
+    )
+  ) {
     throw new RoommateValidationError(
       'Roommate request id is invalid.',
     );
@@ -571,6 +603,43 @@ function assertMatchingGender(
       'Roommate requests are limited to students with the same gender.',
     );
   }
+}
+
+function mergeMessages(
+  first: string[],
+  second: string[],
+  limit: number,
+): string[] {
+  const messages =
+    new Set<string>();
+
+  for (
+    const message
+    of [
+      ...first,
+      ...second,
+    ]
+  ) {
+    const trimmed =
+      message.trim();
+
+    if (trimmed !== '') {
+      messages.add(
+        trimmed,
+      );
+    }
+
+    if (
+      messages.size
+      >= limit
+    ) {
+      break;
+    }
+  }
+
+  return [
+    ...messages,
+  ];
 }
 
 export async function getRoommateProfile(
@@ -717,7 +786,10 @@ export async function acceptRoommateRequest(
     );
   }
 
-  if (existing.status !== 'PENDING') {
+  if (
+    existing.status
+    !== 'PENDING'
+  ) {
     throw new RoommateConflictError(
       'Only pending roommate requests can be accepted.',
     );
@@ -780,7 +852,10 @@ export async function declineRoommateRequest(
     );
   }
 
-  if (existing.status !== 'PENDING') {
+  if (
+    existing.status
+    !== 'PENDING'
+  ) {
     throw new RoommateConflictError(
       'Only pending roommate requests can be declined.',
     );
@@ -828,7 +903,10 @@ export async function cancelRoommateRequest(
     );
   }
 
-  if (existing.status !== 'PENDING') {
+  if (
+    existing.status
+    !== 'PENDING'
+  ) {
     throw new RoommateConflictError(
       'Only pending roommate requests can be cancelled.',
     );
@@ -847,4 +925,180 @@ export async function cancelRoommateRequest(
   }
 
   return cancelled;
+}
+
+export async function getRoommateRecommendations(
+  studentId: string,
+  academicYearValue: unknown,
+): Promise<RoommateRecommendationResult> {
+  const academicYear =
+    validateAcademicYear(
+      academicYearValue,
+    );
+
+  const gender =
+    await getCurrentStudentMatchableGender(
+      studentId,
+    );
+
+  const currentProfile =
+    await findRoommateProfileByStudentId(
+      studentId,
+    );
+
+  if (currentProfile === null) {
+    throw new RoommateConflictError(
+      'Complete your roommate profile before requesting AI-assisted recommendations.',
+    );
+  }
+
+  if (!currentProfile.optedIn) {
+    throw new RoommateConflictError(
+      'Opt into AI-assisted roommate matching before requesting recommendations.',
+    );
+  }
+
+  const acceptedRequest =
+    await findAcceptedRoommateRequestForStudent(
+      studentId,
+      academicYear,
+    );
+
+  if (acceptedRequest !== null) {
+    throw new RoommateConflictError(
+      'AI-assisted recommendations are unavailable because you already have an accepted roommate request for this academic year.',
+    );
+  }
+
+  const candidates =
+    await findAIEligibleRoommateCandidates(
+      studentId,
+      gender,
+      academicYear,
+    );
+
+  const structuredCandidates =
+    candidates
+      .map(
+        (candidate) => ({
+          candidate,
+
+          structured:
+            calculateStructuredCompatibility(
+              currentProfile,
+              candidate.profile,
+            ),
+        }),
+      )
+      .sort(
+        (first, second) =>
+          second.structured.score
+            - first.structured.score
+          || first.candidate.student.lastName.localeCompare(
+            second.candidate.student.lastName,
+          )
+          || first.candidate.student.firstName.localeCompare(
+            second.candidate.student.firstName,
+          )
+          || first.candidate.student.studentId.localeCompare(
+            second.candidate.student.studentId,
+          ),
+      )
+      .slice(
+        0,
+        MAX_AI_CANDIDATES,
+      );
+
+  const recommendations:
+    RoommateRecommendation[] = [];
+
+  for (
+    const entry
+    of structuredCandidates
+  ) {
+    const aiAnalysis =
+      await aiCompatibilityProvider.analyze({
+        student: {
+          aboutMe:
+            currentProfile.aboutMe,
+
+          lookingFor:
+            currentProfile.lookingFor,
+        },
+
+        candidate: {
+          aboutMe:
+            entry.candidate.profile.aboutMe,
+
+          lookingFor:
+            entry.candidate.profile.lookingFor,
+        },
+      });
+
+    const compatibilityScore =
+      combineCompatibilityScores(
+        entry.structured.score,
+        aiAnalysis.semanticScore,
+      );
+
+    recommendations.push({
+      candidate:
+        entry.candidate.student,
+
+      compatibilityScore,
+
+      compatibilityCategory:
+        getCompatibilityCategory(
+          compatibilityScore,
+        ),
+
+      structuredScore:
+        entry.structured.score,
+
+      semanticScore:
+        aiAnalysis.semanticScore,
+
+      strengths:
+        mergeMessages(
+          entry.structured.strengths,
+          aiAnalysis.strengths,
+          4,
+        ),
+
+      differences:
+        mergeMessages(
+          entry.structured.differences,
+          aiAnalysis.differences,
+          3,
+        ),
+
+      explanation:
+        `Structured preferences score ${entry.structured.score}%. ${aiAnalysis.explanation}`,
+
+      analysisSource:
+        aiAnalysis.source,
+    });
+  }
+
+  recommendations.sort(
+    (first, second) =>
+      second.compatibilityScore
+        - first.compatibilityScore
+      || second.structuredScore
+        - first.structuredScore
+      || first.candidate.lastName.localeCompare(
+        second.candidate.lastName,
+      )
+      || first.candidate.firstName.localeCompare(
+        second.candidate.firstName,
+      )
+      || first.candidate.studentId.localeCompare(
+        second.candidate.studentId,
+      ),
+  );
+
+  return {
+    academicYear,
+    recommendations,
+  };
 }

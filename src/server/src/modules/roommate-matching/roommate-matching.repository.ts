@@ -13,6 +13,7 @@ import type {
   RoommatePriority,
   RoommateProfile,
   RoommateProfileInput,
+  RoommateRecommendationCandidate,
   RoommateRequest,
   RoommateRequestStatus,
   RoommateStudentEligibility,
@@ -61,6 +62,10 @@ interface RoommateStudentEligibilityRow {
   gender: Gender;
 }
 
+type RoommateRecommendationCandidateRow =
+  RoommateProfileRow
+  & RoommateStudentRow;
+
 interface RoommateRequestRow {
   id: string;
   academic_year: string;
@@ -100,9 +105,12 @@ function mapRoommateProfile(
   return {
     studentId: row.student_id,
     optedIn: row.opted_in,
-    sleepSchedule: row.sleep_schedule,
-    wakeSchedule: row.wake_schedule,
-    cleanliness: row.cleanliness,
+    sleepSchedule:
+      row.sleep_schedule,
+    wakeSchedule:
+      row.wake_schedule,
+    cleanliness:
+      row.cleanliness,
     studyEnvironment:
       row.study_environment,
     noiseTolerance:
@@ -111,7 +119,8 @@ function mapRoommateProfile(
       row.social_preference,
     guestFrequency:
       row.guest_frequency,
-    roomUse: row.room_use,
+    roomUse:
+      row.room_use,
     sharingPreference:
       row.sharing_preference,
     temperaturePreference:
@@ -120,13 +129,20 @@ function mapRoommateProfile(
       row.communication_style,
     conflictResolution:
       row.conflict_resolution,
-    priority1: row.priority_1,
-    priority2: row.priority_2,
-    priority3: row.priority_3,
-    aboutMe: row.about_me,
-    lookingFor: row.looking_for,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    priority1:
+      row.priority_1,
+    priority2:
+      row.priority_2,
+    priority3:
+      row.priority_3,
+    aboutMe:
+      row.about_me,
+    lookingFor:
+      row.looking_for,
+    createdAt:
+      row.created_at,
+    updatedAt:
+      row.updated_at,
   };
 }
 
@@ -134,14 +150,18 @@ function mapRoommateStudent(
   row: RoommateStudentRow,
 ): RoommateStudentSummary {
   return {
-    studentId: row.student_id,
+    studentId:
+      row.student_id,
     studentNumber:
       row.student_number,
-    firstName: row.first_name,
-    lastName: row.last_name,
+    firstName:
+      row.first_name,
+    lastName:
+      row.last_name,
     academicStatus:
       row.academic_status,
-    major: row.major,
+    major:
+      row.major,
     anticipatedGraduationSemester:
       row.anticipated_graduation_semester,
     anticipatedGraduationYear:
@@ -153,10 +173,15 @@ function mapRoommateRequest(
   row: RoommateRequestRow,
 ): RoommateRequest {
   return {
-    id: row.id,
+    id:
+      row.id,
+
     academicYear:
       row.academic_year,
-    status: row.status,
+
+    status:
+      row.status,
+
     requester: {
       studentId:
         row.requester_student_id,
@@ -175,6 +200,7 @@ function mapRoommateRequest(
       anticipatedGraduationYear:
         row.requester_graduation_year,
     },
+
     requested: {
       studentId:
         row.requested_student_id,
@@ -193,12 +219,16 @@ function mapRoommateRequest(
       anticipatedGraduationYear:
         row.requested_graduation_year,
     },
+
     respondedAt:
       row.responded_at,
+
     cancelledAt:
       row.cancelled_at,
+
     createdAt:
       row.created_at,
+
     updatedAt:
       row.updated_at,
   };
@@ -216,8 +246,10 @@ const ROOMMATE_STUDENT_SELECT = `
     profile.anticipated_graduation_year
   FROM student_profiles profile
   JOIN users user_record
-    ON user_record.id = profile.user_id
-  WHERE user_record.role = 'STUDENT'
+    ON user_record.id =
+      profile.user_id
+  WHERE user_record.role =
+    'STUDENT'
 `;
 
 const ROOMMATE_REQUEST_SELECT = `
@@ -373,24 +405,42 @@ export async function upsertRoommateProfile(
         ON CONFLICT (student_id)
         DO UPDATE
         SET
-          opted_in = EXCLUDED.opted_in,
-          sleep_schedule = EXCLUDED.sleep_schedule,
-          wake_schedule = EXCLUDED.wake_schedule,
-          cleanliness = EXCLUDED.cleanliness,
-          study_environment = EXCLUDED.study_environment,
-          noise_tolerance = EXCLUDED.noise_tolerance,
-          social_preference = EXCLUDED.social_preference,
-          guest_frequency = EXCLUDED.guest_frequency,
-          room_use = EXCLUDED.room_use,
-          sharing_preference = EXCLUDED.sharing_preference,
-          temperature_preference = EXCLUDED.temperature_preference,
-          communication_style = EXCLUDED.communication_style,
-          conflict_resolution = EXCLUDED.conflict_resolution,
-          priority_1 = EXCLUDED.priority_1,
-          priority_2 = EXCLUDED.priority_2,
-          priority_3 = EXCLUDED.priority_3,
-          about_me = EXCLUDED.about_me,
-          looking_for = EXCLUDED.looking_for,
+          opted_in =
+            EXCLUDED.opted_in,
+          sleep_schedule =
+            EXCLUDED.sleep_schedule,
+          wake_schedule =
+            EXCLUDED.wake_schedule,
+          cleanliness =
+            EXCLUDED.cleanliness,
+          study_environment =
+            EXCLUDED.study_environment,
+          noise_tolerance =
+            EXCLUDED.noise_tolerance,
+          social_preference =
+            EXCLUDED.social_preference,
+          guest_frequency =
+            EXCLUDED.guest_frequency,
+          room_use =
+            EXCLUDED.room_use,
+          sharing_preference =
+            EXCLUDED.sharing_preference,
+          temperature_preference =
+            EXCLUDED.temperature_preference,
+          communication_style =
+            EXCLUDED.communication_style,
+          conflict_resolution =
+            EXCLUDED.conflict_resolution,
+          priority_1 =
+            EXCLUDED.priority_1,
+          priority_2 =
+            EXCLUDED.priority_2,
+          priority_3 =
+            EXCLUDED.priority_3,
+          about_me =
+            EXCLUDED.about_me,
+          looking_for =
+            EXCLUDED.looking_for,
           updated_at = NOW()
         RETURNING
           student_id,
@@ -459,13 +509,16 @@ export async function findRoommateStudentEligibilityById(
     await pool.query<RoommateStudentEligibilityRow>(
       `
         SELECT
-          profile.user_id AS student_id,
+          profile.user_id
+            AS student_id,
           profile.gender
         FROM student_profiles profile
         JOIN users user_record
-          ON user_record.id = profile.user_id
+          ON user_record.id =
+            profile.user_id
         WHERE profile.user_id = $1
-          AND user_record.role = 'STUDENT'
+          AND user_record.role =
+            'STUDENT'
       `,
       [
         studentId,
@@ -480,8 +533,11 @@ export async function findRoommateStudentEligibilityById(
   }
 
   return {
-    studentId: row.student_id,
-    gender: row.gender,
+    studentId:
+      row.student_id,
+
+    gender:
+      row.gender,
   };
 }
 
@@ -499,15 +555,21 @@ export async function searchRoommateStudents(
           AND (
             POSITION(
               LOWER($3)
-              IN LOWER(profile.student_number)
+              IN LOWER(
+                profile.student_number
+              )
             ) > 0
             OR POSITION(
               LOWER($3)
-              IN LOWER(profile.first_name)
+              IN LOWER(
+                profile.first_name
+              )
             ) > 0
             OR POSITION(
               LOWER($3)
-              IN LOWER(profile.last_name)
+              IN LOWER(
+                profile.last_name
+              )
             ) > 0
             OR POSITION(
               LOWER($3)
@@ -520,8 +582,9 @@ export async function searchRoommateStudents(
           )
         ORDER BY
           CASE
-            WHEN LOWER(profile.student_number)
-              = LOWER($3)
+            WHEN LOWER(
+              profile.student_number
+            ) = LOWER($3)
               THEN 0
             ELSE 1
           END,
@@ -542,6 +605,183 @@ export async function searchRoommateStudents(
   );
 }
 
+export async function findAIEligibleRoommateCandidates(
+  currentStudentId: string,
+  gender: Gender,
+  academicYear: string,
+): Promise<RoommateRecommendationCandidate[]> {
+  const result =
+    await pool.query<RoommateRecommendationCandidateRow>(
+      `
+        SELECT
+          student.user_id
+            AS student_id,
+          student.student_number,
+          student.first_name,
+          student.last_name,
+          student.academic_status,
+          student.major,
+          student.anticipated_graduation_semester,
+          student.anticipated_graduation_year,
+
+          profile.opted_in,
+          profile.sleep_schedule,
+          profile.wake_schedule,
+          profile.cleanliness,
+          profile.study_environment,
+          profile.noise_tolerance,
+          profile.social_preference,
+          profile.guest_frequency,
+          profile.room_use,
+          profile.sharing_preference,
+          profile.temperature_preference,
+          profile.communication_style,
+          profile.conflict_resolution,
+          profile.priority_1,
+          profile.priority_2,
+          profile.priority_3,
+          profile.about_me,
+          profile.looking_for,
+          profile.created_at,
+          profile.updated_at
+
+        FROM student_profiles student
+
+        JOIN users user_record
+          ON user_record.id =
+            student.user_id
+
+        JOIN roommate_profiles profile
+          ON profile.student_id =
+            student.user_id
+
+        WHERE
+          user_record.role =
+            'STUDENT'
+
+          AND student.user_id <> $1
+
+          AND student.gender = $2
+
+          AND profile.opted_in =
+            TRUE
+
+          AND NOT EXISTS (
+            SELECT 1
+            FROM roommate_requests accepted
+            WHERE
+              accepted.academic_year = $3
+              AND accepted.status =
+                'ACCEPTED'
+              AND (
+                accepted.requester_student_id =
+                  student.user_id
+                OR
+                accepted.requested_student_id =
+                  student.user_id
+              )
+          )
+
+          AND NOT EXISTS (
+            SELECT 1
+            FROM roommate_requests pair_request
+            WHERE
+              pair_request.academic_year = $3
+
+              AND pair_request.status IN (
+                'PENDING',
+                'ACCEPTED'
+              )
+
+              AND (
+                (
+                  pair_request.requester_student_id =
+                    $1
+                  AND
+                  pair_request.requested_student_id =
+                    student.user_id
+                )
+                OR
+                (
+                  pair_request.requester_student_id =
+                    student.user_id
+                  AND
+                  pair_request.requested_student_id =
+                    $1
+                )
+              )
+          )
+
+        ORDER BY
+          student.last_name,
+          student.first_name,
+          student.user_id
+      `,
+      [
+        currentStudentId,
+        gender,
+        academicYear,
+      ],
+    );
+
+  return result.rows.map(
+    (row) => ({
+      student:
+        mapRoommateStudent(
+          row,
+        ),
+
+      profile:
+        mapRoommateProfile(
+          row,
+        ),
+    }),
+  );
+}
+
+export async function findAcceptedRoommateRequestForStudent(
+  studentId: string,
+  academicYear: string,
+): Promise<RoommateRequest | null> {
+  const result =
+    await pool.query<RoommateRequestRow>(
+      `
+        ${ROOMMATE_REQUEST_SELECT}
+        WHERE
+          request.academic_year = $2
+          AND request.status =
+            'ACCEPTED'
+          AND (
+            request.requester_student_id =
+              $1
+            OR
+            request.requested_student_id =
+              $1
+          )
+        ORDER BY
+          request.responded_at
+            DESC NULLS LAST,
+          request.id DESC
+        LIMIT 1
+      `,
+      [
+        studentId,
+        academicYear,
+      ],
+    );
+
+  const row =
+    result.rows[0];
+
+  if (row === undefined) {
+    return null;
+  }
+
+  return mapRoommateRequest(
+    row,
+  );
+}
+
 export async function findRoommateRequestsForStudent(
   studentId: string,
 ): Promise<RoommateRequest[]> {
@@ -550,8 +790,11 @@ export async function findRoommateRequestsForStudent(
       `
         ${ROOMMATE_REQUEST_SELECT}
         WHERE
-          request.requester_student_id = $1
-          OR request.requested_student_id = $1
+          request.requester_student_id =
+            $1
+          OR
+          request.requested_student_id =
+            $1
         ORDER BY
           request.created_at DESC,
           request.id DESC
@@ -576,8 +819,11 @@ export async function findRoommateRequestByIdForStudent(
         ${ROOMMATE_REQUEST_SELECT}
         WHERE request.id = $1
           AND (
-            request.requester_student_id = $2
-            OR request.requested_student_id = $2
+            request.requester_student_id =
+              $2
+            OR
+            request.requested_student_id =
+              $2
           )
       `,
       [
@@ -663,7 +909,8 @@ export async function acceptPendingRoommateRequest(
           responded_at = NOW(),
           updated_at = NOW()
         WHERE id = $1
-          AND requested_student_id = $2
+          AND requested_student_id =
+            $2
           AND status = 'PENDING'
         RETURNING id
       `,
@@ -696,7 +943,8 @@ export async function declinePendingRoommateRequest(
           responded_at = NOW(),
           updated_at = NOW()
         WHERE id = $1
-          AND requested_student_id = $2
+          AND requested_student_id =
+            $2
           AND status = 'PENDING'
         RETURNING id
       `,
@@ -729,7 +977,8 @@ export async function cancelPendingRoommateRequest(
           cancelled_at = NOW(),
           updated_at = NOW()
         WHERE id = $1
-          AND requester_student_id = $2
+          AND requester_student_id =
+            $2
           AND status = 'PENDING'
         RETURNING id
       `,

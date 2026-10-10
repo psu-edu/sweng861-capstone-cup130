@@ -14,6 +14,7 @@ import {
   createCurrentStudentRoommateRequest,
   declineCurrentStudentRoommateRequest,
   getCurrentRoommateProfile,
+  getCurrentStudentRoommateRecommendations,
   getCurrentStudentRoommateRequests,
   searchCurrentStudentRoommates,
   updateCurrentRoommateProfile,
@@ -41,6 +42,11 @@ studentRoommateMatchingRouter.put(
 studentRoommateMatchingRouter.get(
   '/search',
   searchCurrentStudentRoommates,
+);
+
+studentRoommateMatchingRouter.get(
+  '/recommendations',
+  getCurrentStudentRoommateRecommendations,
 );
 
 studentRoommateMatchingRouter.get(
