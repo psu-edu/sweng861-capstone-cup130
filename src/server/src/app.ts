@@ -7,6 +7,10 @@ import {checkDatabaseConnection,} from './db/pool.js';
 import {authRouter,} from './auth/auth.routes.js';
 import {handleAuthenticationError,} from './auth/auth.middleware.js';
 import {studentProfileRouter,} from './modules/student-profile/student-profile.routes.js';
+import {
+  housingInventoryRouter,
+  housingOptionsRouter,
+} from './modules/housing-inventory/housing-inventory.routes.js';
 
 const app = express();
 
@@ -44,6 +48,16 @@ app.use(
 app.use(
   '/api/student/profile',
   studentProfileRouter,
+);
+
+app.use(
+  '/api/inventory',
+  housingInventoryRouter,
+);
+
+app.use(
+  '/api/student/housing-options',
+  housingOptionsRouter,
 );
 
 app.use(
