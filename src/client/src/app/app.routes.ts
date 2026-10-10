@@ -1,13 +1,16 @@
 import { Routes } from '@angular/router';
-
 import { authGuardFn } from '@auth0/auth0-angular';
-import { Login } from './pages/login/login';
+
 import { AppShell } from './layout/app-shell/app-shell';
 import { Dashboard } from './pages/dashboard/dashboard';
+import { HousingApplicationsPage } from './pages/housing-applications/housing-applications';
+import { HousingInventoryPage } from './pages/housing-inventory/housing-inventory';
+import { HousingOptionsPage } from './pages/housing-options/housing-options';
+import { Login } from './pages/login/login';
 import { Placeholder } from './pages/placeholder/placeholder';
-import {StudentProfilePage} from './pages/student-profile/student-profile';
-import {HousingInventoryPage,} from './pages/housing-inventory/housing-inventory';
-import {HousingOptionsPage,} from './pages/housing-options/housing-options';
+import { StudentApplicationPage } from './pages/student-application/student-application';
+import { StudentProfilePage } from './pages/student-profile/student-profile';
+
 
 export const routes: Routes = [
   {
@@ -36,12 +39,7 @@ export const routes: Routes = [
       },
       {
         path: 'application',
-        component: Placeholder,
-        data: {
-          title: 'My Application',
-          description:
-            'Review and manage your Campus Rental housing application.',
-        },
+        component: StudentApplicationPage,
       },
       {
         path: 'housing',
@@ -76,12 +74,8 @@ export const routes: Routes = [
       },
       {
         path: 'applications',
-        component: Placeholder,
-        data: {
-          title: 'Applications',
-          description:
-            'Review student housing applications.',
-        },
+        component:
+          HousingApplicationsPage,
       },
       {
         path: 'assignments',

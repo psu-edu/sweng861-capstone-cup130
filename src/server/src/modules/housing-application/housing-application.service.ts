@@ -53,6 +53,31 @@ function isRecord(
   );
 }
 
+function getAllowedAcademicYears(): string[] {
+  const now =
+    new Date();
+
+  const currentYear =
+    now.getFullYear();
+
+  const currentMonth =
+    now.getMonth();
+
+  const academicYearStart =
+    currentMonth < 6
+      ? currentYear - 1
+      : currentYear;
+
+  return [
+    academicYearStart,
+    academicYearStart + 1,
+    academicYearStart + 2,
+  ].map(
+    (year) =>
+      `${year}-${year + 1}`,
+  );
+}
+
 function getAcademicYear(
   input: Record<string, unknown>,
 ): string {
@@ -94,6 +119,16 @@ function getAcademicYear(
   ) {
     throw new HousingApplicationValidationError(
       'The second academic year must immediately follow the first.',
+    );
+  }
+
+  const allowedAcademicYears = getAllowedAcademicYears();
+  
+  if (
+    !allowedAcademicYears.includes(academicYear)
+  ) {
+    throw new HousingApplicationValidationError(
+      'Academic year must be the current academic year or one of the next two academic years.',
     );
   }
 

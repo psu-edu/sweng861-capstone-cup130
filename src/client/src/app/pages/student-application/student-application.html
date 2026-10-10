@@ -1,0 +1,380 @@
+<section class="page">
+  <header class="page-header">
+    <p class="eyebrow">
+      Student Housing
+    </p>
+
+    <h1>My Application</h1>
+
+    <p>
+      Review your housing application status and
+      see what comes next.
+    </p>
+  </header>
+
+  @if (message()) {
+    <div
+      class="page-message success-message"
+      role="status"
+    >
+      {{ message() }}
+    </div>
+  }
+
+  @if (error()) {
+    <div
+      class="page-message error-message"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading your application...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="card">
+      <div
+        class="page-message error-message"
+        role="alert"
+      >
+        {{ loadError() }}
+      </div>
+    </div>
+  } @else if (
+    currentApplication();
+    as application
+  ) {
+    <article class="application-card">
+      <header class="application-header">
+        <div>
+          <p class="section-label">
+            Current Application
+          </p>
+
+          <h2>
+            {{ application.academicYear }}
+          </h2>
+        </div>
+
+        <span
+          class="status-badge"
+          [attr.data-status]="
+            application.status
+          "
+        >
+          {{
+            statusLabel(
+              application.status
+            )
+          }}
+        </span>
+      </header>
+
+      <div class="application-details">
+        <div>
+          <span class="detail-label">
+            Preferred Residence Hall
+          </span>
+
+          <strong>
+            {{
+              application
+                .preferredBuildingName
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="detail-label">
+            Preferred Room Style
+          </span>
+
+          <strong>
+            {{
+              roomStyleLabel(
+                application
+                  .preferredRoomStyle
+              )
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="detail-label">
+            Submitted
+          </span>
+
+          <strong>
+            {{
+              formatDate(
+                application.submittedAt
+              )
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="detail-label">
+            Approved
+          </span>
+
+          <strong>
+            {{
+              formatDate(
+                application.approvedAt
+              )
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="detail-label">
+            Housing Assigned
+          </span>
+
+          <strong>
+            {{
+              formatDate(
+                application
+                  .housingAssignedAt
+              )
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <span class="detail-label">
+            Completed
+          </span>
+
+          <strong>
+            {{
+              formatDate(
+                application.completedAt
+              )
+            }}
+          </strong>
+        </div>
+
+        @if (
+          application.cancelledAt
+            !== null
+        ) {
+          <div>
+            <span class="detail-label">
+              Cancelled
+            </span>
+
+            <strong>
+              {{
+                formatDate(
+                  application.cancelledAt
+                )
+              }}
+            </strong>
+          </div>
+        }
+      </div>
+    </article>
+
+    <section class="next-step-card">
+      <p class="section-label">
+        Next Step
+      </p>
+
+      @switch (application.status) {
+        @case ('DRAFT') {
+          <h2>
+            Finish and submit your preferences
+          </h2>
+
+          <p>
+            Your application is still a draft.
+            Review your residence hall, room
+            style, and academic year before
+            submitting it.
+          </p>
+
+          <a
+            class="primary-link"
+            routerLink="/housing-preferences"
+          >
+            Continue Housing Preferences
+          </a>
+        }
+
+        @case ('SUBMITTED') {
+          <h2>
+            Housing Office review
+          </h2>
+
+          <p>
+            Your application has been submitted.
+            No changes can be made while it is
+            waiting for Housing Office review.
+          </p>
+        }
+
+        @case ('APPROVED') {
+          <h2>
+            Application approved
+          </h2>
+
+          <p>
+            Your application has been approved.
+            You can review your housing
+            preferences while the remaining
+            roommate and assignment steps are
+            completed.
+          </p>
+
+          <a
+            class="secondary-link"
+            routerLink="/housing-preferences"
+          >
+            Review Housing Preferences
+          </a>
+        }
+
+        @case ('HOUSING_ASSIGNED') {
+          <h2>
+            Housing has been assigned
+          </h2>
+
+          <p>
+            A Housing Officer has reserved your
+            housing. The assignment and lease
+            steps will provide the remaining
+            details.
+          </p>
+
+          <a
+            class="secondary-link"
+            routerLink="/housing"
+          >
+            View My Housing
+          </a>
+        }
+
+        @case ('COMPLETED') {
+          <h2>
+            Housing process complete
+          </h2>
+
+          <p>
+            This housing application has been
+            completed and is preserved as part of
+            your housing history.
+          </p>
+        }
+
+        @case ('CANCELLED') {
+          <h2>
+            Application cancelled
+          </h2>
+
+          <p>
+            This application is closed. You can
+            begin a new housing application when
+            needed.
+          </p>
+
+          <a
+            class="primary-link"
+            routerLink="/housing-preferences"
+          >
+            Start New Application
+          </a>
+        }
+      }
+
+      @if (canCancel(application)) {
+        <div class="cancel-area">
+          <button
+            type="button"
+            class="danger-button"
+            [disabled]="acting()"
+            (click)="
+              cancelApplication(application)
+            "
+          >
+            {{
+              acting()
+                ? 'Cancelling...'
+                : 'Cancel Application'
+            }}
+          </button>
+        </div>
+      }
+    </section>
+
+    @if (
+      previousApplications().length > 0
+    ) {
+      <section class="history-card">
+        <h2>Previous Applications</h2>
+
+        <div class="history-list">
+          @for (
+            previous of previousApplications();
+            track previous.id
+          ) {
+            <article class="history-row">
+              <div>
+                <strong>
+                  {{ previous.academicYear }}
+                </strong>
+
+                <p>
+                  {{
+                    previous
+                      .preferredBuildingName
+                  }}
+                  ·
+                  {{
+                    roomStyleLabel(
+                      previous
+                        .preferredRoomStyle
+                    )
+                  }}
+                </p>
+              </div>
+
+              <span
+                class="status-badge"
+                [attr.data-status]="
+                  previous.status
+                "
+              >
+                {{
+                  statusLabel(
+                    previous.status
+                  )
+                }}
+              </span>
+            </article>
+          }
+        </div>
+      </section>
+    }
+  } @else {
+    <div class="empty-state card">
+      <h2>No housing application yet</h2>
+
+      <p>
+        Start by selecting a preferred residence
+        hall, room style, and academic year.
+      </p>
+
+      <a
+        class="primary-link"
+        routerLink="/housing-preferences"
+      >
+        Start Housing Application
+      </a>
+    </div>
+  }
+</section>

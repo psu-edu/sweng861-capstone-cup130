@@ -1,0 +1,461 @@
+<section class="page">
+  <header class="page-header">
+    <p class="eyebrow">
+      Housing Officer
+    </p>
+
+    <h1>Housing Applications</h1>
+
+    <p>
+      Review student applications, maintain
+      internal notes, and approve eligible
+      submissions.
+    </p>
+  </header>
+
+  @if (message()) {
+    <div
+      class="page-message success-message"
+      role="status"
+    >
+      {{ message() }}
+    </div>
+  }
+
+  @if (error()) {
+    <div
+      class="page-message error-message"
+      role="alert"
+    >
+      {{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading housing applications...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="card">
+      <div
+        class="page-message error-message"
+        role="alert"
+      >
+        {{ loadError() }}
+      </div>
+    </div>
+  } @else if (
+    applications().length === 0
+  ) {
+    <div class="card empty-state">
+      <h2>No housing applications</h2>
+
+      <p>
+        Student housing applications will appear
+        here after they are created.
+      </p>
+    </div>
+  } @else {
+    <section class="application-list-card">
+      <div class="table-scroll">
+        <table aria-label="Housing applications">
+          <thead>
+            <tr>
+              <th scope="col">
+                Student
+              </th>
+
+              <th scope="col">
+                Academic Year
+              </th>
+
+              <th scope="col">
+                Preference
+              </th>
+
+              <th scope="col">
+                Submitted
+              </th>
+
+              <th scope="col">
+                Status
+              </th>
+
+              <th scope="col">
+                Action
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (
+              application of applications();
+              track application.id
+            ) {
+              <tr
+                [class.selected-row]="
+                  selectedApplication()?.id
+                    === application.id
+                "
+              >
+                <td>
+                  <strong>
+                    {{ application.firstName }}
+                    {{ application.lastName }}
+                  </strong>
+
+                  <span class="student-number">
+                    {{
+                      application.studentNumber
+                    }}
+                  </span>
+                </td>
+
+                <td>
+                  {{ application.academicYear }}
+                </td>
+
+                <td>
+                  {{
+                    application
+                      .preferredBuildingName
+                  }}
+
+                  <span class="preference-detail">
+                    {{
+                      roomStyleLabel(
+                        application
+                          .preferredRoomStyle
+                      )
+                    }}
+                  </span>
+                </td>
+
+                <td>
+                  {{
+                    formatDate(
+                      application.submittedAt
+                    )
+                  }}
+                </td>
+
+                <td>
+                  <span
+                    class="status-badge"
+                    [attr.data-status]="
+                      application.status
+                    "
+                  >
+                    {{
+                      statusLabel(
+                        application.status
+                      )
+                    }}
+                  </span>
+                </td>
+
+                <td>
+                  <button
+                    type="button"
+                    class="review-button"
+                    [disabled]="
+                      detailLoading()
+                      || saving()
+                    "
+                    (click)="
+                      reviewApplication(
+                        application.id
+                      )
+                    "
+                  >
+                    Review
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (detailLoading()) {
+    <div class="card review-loading">
+      <p>Loading application details...</p>
+    </div>
+  }
+
+  @if (
+    selectedApplication();
+    as application
+  ) {
+    <section class="review-panel">
+      <header class="review-header">
+        <div>
+          <p class="section-label">
+            Application Review
+          </p>
+
+          <h2>
+            {{ application.firstName }}
+            {{ application.lastName }}
+          </h2>
+        </div>
+
+        <div class="review-header-actions">
+          <span
+            class="status-badge"
+            [attr.data-status]="
+              application.status
+            "
+          >
+            {{
+              statusLabel(
+                application.status
+              )
+            }}
+          </span>
+
+          <button
+            type="button"
+            class="text-button"
+            [disabled]="saving()"
+            (click)="closeReview()"
+          >
+            Close Review
+          </button>
+        </div>
+      </header>
+
+      <div class="review-grid">
+        <section class="detail-section">
+          <h3>Student</h3>
+
+          <dl class="detail-list">
+            <div>
+              <dt>Student Number</dt>
+
+              <dd>
+                {{ application.studentNumber }}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Gender</dt>
+
+              <dd>
+                {{
+                  enumLabel(
+                    application.gender
+                  )
+                }}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Academic Status</dt>
+
+              <dd>
+                {{
+                  enumLabel(
+                    application
+                      .academicStatus
+                  )
+                }}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Major</dt>
+
+              <dd>
+                {{ application.major }}
+              </dd>
+            </div>
+
+            <div>
+              <dt>
+                Anticipated Graduation
+              </dt>
+
+              <dd>
+                {{
+                  graduationLabel(
+                    application
+                  )
+                }}
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="detail-section">
+          <h3>Application</h3>
+
+          <dl class="detail-list">
+            <div>
+              <dt>Academic Year</dt>
+
+              <dd>
+                {{ application.academicYear }}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Preferred Hall</dt>
+
+              <dd>
+                {{
+                  application
+                    .preferredBuildingName
+                }}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Preferred Room Style</dt>
+
+              <dd>
+                {{
+                  roomStyleLabel(
+                    application
+                      .preferredRoomStyle
+                  )
+                }}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Submitted</dt>
+
+              <dd>
+                {{
+                  formatDate(
+                    application.submittedAt
+                  )
+                }}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Approved</dt>
+
+              <dd>
+                {{
+                  formatDate(
+                    application.approvedAt
+                  )
+                }}
+              </dd>
+            </div>
+
+            @if (
+              application.cancelledAt
+                !== null
+            ) {
+              <div>
+                <dt>Cancelled</dt>
+
+                <dd>
+                  {{
+                    formatDate(
+                      application.cancelledAt
+                    )
+                  }}
+                </dd>
+              </div>
+            }
+          </dl>
+        </section>
+      </div>
+
+      <section class="notes-section">
+        <div class="notes-heading">
+          <div>
+            <h3>Housing Officer Notes</h3>
+
+            <p>
+              Internal notes are only returned
+              through Housing Officer APIs and are
+              never shown to Students.
+            </p>
+          </div>
+        </div>
+
+        <label for="officerNotes">
+          Internal Notes
+        </label>
+
+        <textarea
+          id="officerNotes"
+          rows="5"
+          maxlength="5000"
+          [formControl]="notesControl"
+        ></textarea>
+
+        @if (
+          notesControl.touched
+          && notesControl.invalid
+        ) {
+          <span class="field-error">
+            Housing Officer notes must be 5000
+            characters or fewer.
+          </span>
+        }
+
+        <div class="notes-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="saving()"
+            (click)="saveNotes()"
+          >
+            {{
+              saving()
+                ? 'Saving...'
+                : 'Save Notes'
+            }}
+          </button>
+        </div>
+      </section>
+
+      <div class="administrative-actions">
+        <div>
+          <h3>Administrative Actions</h3>
+
+          <p>
+            Application status changes are
+            enforced by the backend workflow.
+          </p>
+        </div>
+
+        <div class="action-buttons">
+          @if (
+            application.status
+              === 'SUBMITTED'
+          ) {
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="saving()"
+              (click)="approveApplication()"
+            >
+              Approve Application
+            </button>
+          }
+
+          @if (canCancel(application)) {
+            <button
+              type="button"
+              class="danger-button"
+              [disabled]="saving()"
+              (click)="cancelApplication()"
+            >
+              Cancel Application
+            </button>
+          }
+        </div>
+      </div>
+    </section>
+  }
+</section>
