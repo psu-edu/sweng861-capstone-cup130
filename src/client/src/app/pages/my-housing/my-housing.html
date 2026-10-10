@@ -1,0 +1,250 @@
+<section class="page">
+  <header class="page-header">
+    <p class="eyebrow">
+      Student Housing
+    </p>
+
+    <h1>My Housing</h1>
+
+    <p>
+      Review your reserved or confirmed
+      university housing and previous assignment
+      history.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <div class="card">
+      <p>Loading your housing assignment...</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="card">
+      <div
+        class="page-message error-message"
+        role="alert"
+      >
+        {{ loadError() }}
+      </div>
+    </div>
+  } @else {
+    @if (
+      activeAssignments().length === 0
+    ) {
+      <section class="card empty-state">
+        <h2>No housing assignment yet</h2>
+
+        <p>
+          Your exact room and bed will appear here
+          after the Housing Office completes your
+          assignment.
+        </p>
+      </section>
+    } @else {
+      <section class="active-section">
+        <header class="section-header">
+          <div>
+            <p class="section-label">
+              Current Housing
+            </p>
+
+            <h2>
+              Active Housing Assignments
+            </h2>
+          </div>
+
+          <p>
+            A reserved assignment holds your bed.
+            Lease completion later confirms the
+            placement.
+          </p>
+        </header>
+
+        <div class="housing-grid">
+          @for (
+            assignment
+              of activeAssignments();
+            track assignment.id
+          ) {
+            <article class="housing-card">
+              <header class="housing-card-header">
+                <div>
+                  <h3>
+                    {{ assignment.buildingName }}
+                  </h3>
+
+                  <p>
+                    {{ assignment.academicYear }}
+                  </p>
+                </div>
+
+                <span
+                  class="status-badge"
+                  [attr.data-status]="
+                    assignment.status
+                  "
+                >
+                  {{
+                    statusLabel(
+                      assignment.status
+                    )
+                  }}
+                </span>
+              </header>
+
+              <div class="location-grid">
+                <div>
+                  <span class="detail-label">
+                    Room
+                  </span>
+
+                  <strong>
+                    {{ assignment.roomNumber }}
+                  </strong>
+                </div>
+
+                <div>
+                  <span class="detail-label">
+                    Bed
+                  </span>
+
+                  <strong>
+                    {{ assignment.bedLabel }}
+                  </strong>
+                </div>
+
+                <div>
+                  <span class="detail-label">
+                    Room Style
+                  </span>
+
+                  <strong>
+                    {{
+                      roomStyleLabel(
+                        assignment.roomStyle
+                      )
+                    }}
+                  </strong>
+                </div>
+              </div>
+
+              <dl class="date-list">
+                <div>
+                  <dt>Reserved</dt>
+
+                  <dd>
+                    {{
+                      formatDate(
+                        assignment.reservedAt
+                      )
+                    }}
+                  </dd>
+                </div>
+
+                @if (
+                  assignment.confirmedAt
+                    !== null
+                ) {
+                  <div>
+                    <dt>Confirmed</dt>
+
+                    <dd>
+                      {{
+                        formatDate(
+                          assignment.confirmedAt
+                        )
+                      }}
+                    </dd>
+                  </div>
+                }
+              </dl>
+
+              <div
+                class="status-message"
+                [attr.data-status]="
+                  assignment.status
+                "
+              >
+                {{
+                  assignmentMessage(
+                    assignment
+                  )
+                }}
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    @if (
+      historicalAssignments().length > 0
+    ) {
+      <section class="history-section">
+        <header class="section-header">
+          <div>
+            <p class="section-label">
+              History
+            </p>
+
+            <h2>
+              Previous Housing Assignments
+            </h2>
+          </div>
+        </header>
+
+        <div class="history-list">
+          @for (
+            assignment
+              of historicalAssignments();
+            track assignment.id
+          ) {
+            <article class="history-card">
+              <div>
+                <strong>
+                  {{ assignment.buildingName }}
+                  · Room
+                  {{ assignment.roomNumber }}
+                  · Bed
+                  {{ assignment.bedLabel }}
+                </strong>
+
+                <span class="history-meta">
+                  {{ assignment.academicYear }}
+                  ·
+                  {{
+                    roomStyleLabel(
+                      assignment.roomStyle
+                    )
+                  }}
+                </span>
+              </div>
+
+              <div class="history-status">
+                <span
+                  class="status-badge"
+                  [attr.data-status]="
+                    assignment.status
+                  "
+                >
+                  {{
+                    statusLabel(
+                      assignment.status
+                    )
+                  }}
+                </span>
+
+                <span class="history-meta">
+                  {{
+                    assignmentMessage(
+                      assignment
+                    )
+                  }}
+                </span>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+</section>
