@@ -51,6 +51,58 @@ interface HousingOptionRow {
   available_beds: number;
 }
 
+async function findBedById(
+  bedId: string,
+): Promise<InventoryBed | null> {
+  const result =
+    await pool.query<BedRow>(
+      `
+        SELECT
+          bed.id,
+          bed.room_id,
+          bed.bed_label,
+          bed.active,
+          (
+            building.active
+            AND room.active
+            AND bed.active
+            AND NOT EXISTS (
+              SELECT 1
+              FROM housing_assignments assignment
+              WHERE assignment.bed_id = bed.id
+                AND assignment.status IN (
+                  'RESERVED',
+                  'CONFIRMED'
+                )
+            )
+          ) AS available
+        FROM beds bed
+        JOIN rooms room
+          ON room.id = bed.room_id
+        JOIN buildings building
+          ON building.id = room.building_id
+        WHERE bed.id = $1
+      `,
+      [
+        bedId,
+      ],
+    );
+
+  const row =
+    result.rows[0];
+
+  if (row === undefined) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    bedLabel: row.bed_label,
+    active: row.active,
+    available: row.available,
+  };
+}
+
 export async function findInventoryHierarchy():
 Promise<InventoryBuilding[]> {
   const [
@@ -514,12 +566,18 @@ export async function createBed(
     );
   }
 
-  return {
-    id: row.id,
-    bedLabel: row.bed_label,
-    active: row.active,
-    available: row.active,
-  };
+  const bed =
+    await findBedById(
+      row.id,
+    );
+  
+  if (bed === null) {
+    throw new Error(
+      'Created bed could not be retrieved.',
+    );
+  }
+  
+  return bed;
 }
 
 export async function updateBed(
@@ -558,10 +616,7 @@ export async function updateBed(
     return null;
   }
 
-  return {
-    id: row.id,
-    bedLabel: row.bed_label,
-    active: row.active,
-    available: row.active,
-  };
+  return findBedById(
+    row.id,
+  );
 }

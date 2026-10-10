@@ -502,6 +502,80 @@ describe(
     );
 
     it(
+      'does not report an active bed as available when its room is inactive',
+      async () => {
+        const buildingResponse =
+          await officerRequest()
+            .post(
+              '/api/inventory/buildings',
+            )
+            .send({
+              name:
+                'North Residence Hall',
+              address:
+                '300 University Avenue',
+              description: null,
+            });
+    
+        const buildingId =
+          buildingResponse.body
+            .building.id as string;
+    
+        const roomResponse =
+          await officerRequest()
+            .post(
+              `/api/inventory/buildings/${buildingId}/rooms`,
+            )
+            .send({
+              roomNumber: '201',
+              floor: 2,
+              roomStyle: 'DOUBLE',
+            });
+    
+        const roomId =
+          roomResponse.body
+            .room.id as string;
+    
+        const deactivateResponse =
+          await officerRequest()
+            .put(
+              `/api/inventory/rooms/${roomId}`,
+            )
+            .send({
+              roomNumber: '201',
+              floor: 2,
+              roomStyle: 'DOUBLE',
+              active: false,
+            });
+    
+        expect(
+          deactivateResponse.status,
+        ).toBe(200);
+    
+        const bedResponse =
+          await officerRequest()
+            .post(
+              `/api/inventory/rooms/${roomId}/beds`,
+            )
+            .send({
+              bedLabel: 'A',
+            });
+    
+        expect(
+          bedResponse.status,
+        ).toBe(201);
+    
+        expect(
+          bedResponse.body.bed,
+        ).toMatchObject({
+          bedLabel: 'A',
+          active: true,
+          available: false,
+        });
+      },
+    );
+
+    it(
       'prevents a Student from using Housing Officer inventory endpoints',
       async () => {
         const response =
